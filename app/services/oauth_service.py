@@ -85,6 +85,7 @@ class OAuthService:
         """Получить информацию о пользователе Yandex."""
         async with httpx.AsyncClient() as client:
             try:
+                # Запрашиваем информацию с полями email, first_name, last_name
                 response = await client.get(
                     "https://login.yandex.ru/info",
                     headers={"Authorization": f"OAuth {access_token}"},
@@ -92,9 +93,26 @@ class OAuthService:
                     timeout=10.0
                 )
                 response.raise_for_status()
-                return response.json()
+                user_data = response.json()
+                
+                # Логируем полученные данные для отладки
+                print(f"Yandex user info received: {list(user_data.keys())}")
+                
+                # Проверяем наличие email
+                if "default_email" not in user_data and "emails" in user_data:
+                    # Если default_email нет, но есть emails, берем первый
+                    emails = user_data.get("emails", [])
+                    if emails:
+                        user_data["default_email"] = emails[0]
+                
+                return user_data
+            except httpx.HTTPStatusError as e:
+                print(f"Yandex user info HTTP error: {e.response.status_code} - {e.response.text}")
+                return None
             except Exception as e:
                 print(f"Yandex user info error: {e}")
+                import traceback
+                traceback.print_exc()
                 return None
     
     @staticmethod
