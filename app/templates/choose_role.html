@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}Выбор роли — XK Media{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 900px; margin: 4rem auto; padding: 0 2rem;">
+    <div class="page-header" style="text-align: center; margin-bottom: 3rem;">
+        <h1 class="page-title">Выберите ваш тип аккаунта</h1>
+        <p class="page-subtitle">Выберите, как вы хотите использовать платформу XK Media</p>
+    </div>
+
+    {% if error %}
+    <div class="alert alert-error" style="margin-bottom: 2rem;">{{ error }}</div>
+    {% endif %}
+
+    <div class="grid grid-2" style="gap: 2rem; margin-bottom: 3rem;">
+        <!-- Рекламодатель -->
+        <div class="card" style="cursor: pointer; transition: all 0.3s; position: relative; overflow: hidden;" 
+             onclick="selectRole('advertiser')" 
+             onmouseover="this.style.transform='translateY(-5px)'; this.style.borderColor='var(--accent)'"
+             onmouseout="this.style.transform='translateY(0)'; this.style.borderColor='var(--border)'">
+            <div style="text-align: center; padding: 2rem;">
+                <div style="font-size: 5rem; margin-bottom: 1.5rem;">🎯</div>
+                <h2 style="font-size: 2rem; margin-bottom: 1rem; color: var(--accent);">Рекламодатель</h2>
+                <p style="color: var(--text-muted); line-height: 1.7; margin-bottom: 2rem;">
+                    Размещайте рекламу на ТВ-экранах в заведениях. 
+                    Привлекайте клиентов через омниканальные кампании с QR-кодами и аналитикой.
+                </p>
+                <ul style="text-align: left; color: var(--text-muted); list-style: none; padding: 0; margin-bottom: 2rem;">
+                    <li style="padding: 0.5rem 0;">✓ Создание рекламных кампаний</li>
+                    <li style="padding: 0.5rem 0;">✓ Выбор площадок и экранов</li>
+                    <li style="padding: 0.5rem 0;">✓ Детальная аналитика</li>
+                    <li style="padding: 0.5rem 0;">✓ Управление балансом</li>
+                </ul>
+                <button class="btn btn-primary" style="width: 100%;" onclick="event.stopPropagation(); selectRole('advertiser')">
+                    Выбрать рекламодателя
+                </button>
+            </div>
+        </div>
+
+        <!-- Площадка -->
+        <div class="card" style="cursor: pointer; transition: all 0.3s; position: relative; overflow: hidden;"
+             onclick="selectRole('venue')"
+             onmouseover="this.style.transform='translateY(-5px)'; this.style.borderColor='var(--accent-secondary)'"
+             onmouseout="this.style.transform='translateY(0)'; this.style.borderColor='var(--border)'">
+            <div style="text-align: center; padding: 2rem;">
+                <div style="font-size: 5rem; margin-bottom: 1.5rem;">📺</div>
+                <h2 style="font-size: 2rem; margin-bottom: 1rem; color: var(--accent-secondary);">Площадка показа</h2>
+                <p style="color: var(--text-muted); line-height: 1.7; margin-bottom: 2rem;">
+                    Монетизируйте посетителей вашего заведения. 
+                    Установите ТВ-экран и получайте дополнительный доход от рекламы.
+                </p>
+                <ul style="text-align: left; color: var(--text-muted); list-style: none; padding: 0; margin-bottom: 2rem;">
+                    <li style="padding: 0.5rem 0;">✓ Управление ТВ-экранами</li>
+                    <li style="padding: 0.5rem 0;">✓ Автоматические выплаты</li>
+                    <li style="padding: 0.5rem 0;">✓ Статистика показов</li>
+                    <li style="padding: 0.5rem 0;">✓ Дополнительный доход</li>
+                </ul>
+                <button class="btn btn-secondary" style="width: 100%;" onclick="event.stopPropagation(); selectRole('venue')">
+                    Выбрать площадку
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div style="text-align: center; color: var(--text-muted);">
+        <p>Вы сможете изменить роль позже в настройках профиля</p>
+    </div>
+</div>
+
+<form id="roleForm" method="POST" action="/choose-role" style="display: none;">
+    <input type="hidden" name="role" id="selectedRole">
+</form>
+
+<script>
+function selectRole(role) {
+    document.getElementById('selectedRole').value = role;
+    document.getElementById('roleForm').submit();
+}
+</script>
+{% endblock %}

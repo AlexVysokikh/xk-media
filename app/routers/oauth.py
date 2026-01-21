@@ -27,11 +27,11 @@ def set_cookie_and_redirect(response: RedirectResponse, user: User, role: str):
     """Установить cookie и перенаправить пользователя."""
     token = create_access_token(data={"sub": str(user.id), "role": user.role})
     
-    redirect_url = "/advertiser"
-    if role == Role.ADMIN:
+    # Для админа сразу в админку, для остальных - выбор роли
+    if user.role == Role.ADMIN:
         redirect_url = "/admin"
-    elif role == Role.VENUE:
-        redirect_url = "/venue"
+    else:
+        redirect_url = "/choose-role"
     
     response.url = redirect_url
     response.set_cookie(

@@ -101,11 +101,54 @@ async def login_page(request: Request, error: str = None, user: User = Depends(g
     return templates.TemplateResponse("login.html", {"request": request, "error": error_message})
 
 
+@router.get("/choose-role", response_class=HTMLResponse)
+async def choose_role_page(request: Request, error: str = None, user: User = Depends(get_current_user_from_cookie)):
+    """Page for choosing user role after registration/login."""
+    if not user:
+        return RedirectResponse(url="/login", status_code=303)
+    
+    # Если роль уже выбрана и это не первый вход, можно пропустить выбор
+    # Но для универсальности всегда показываем выбор
+    error_message = None
+    if error:
+        error_message = "Ошибка при выборе роли. Попробуйте еще раз."
+    
+    return templates.TemplateResponse("choose_role.html", {
+        "request": request,
+        "user": user,
+        "error": error_message
+    })
+
+
+@router.post("/choose-role", response_class=HTMLResponse)
+async def choose_role_save(
+    request: Request,
+    role: str = Form(...),
+    user: User = Depends(get_current_user_from_cookie),
+    db: Session = Depends(get_db),
+):
+    """Save selected role and redirect to appropriate dashboard."""
+    if not user:
+        return RedirectResponse(url="/login", status_code=303)
+    
+    # Validate role
+    if role not in [Role.ADVERTISER, Role.VENUE]:
+        return RedirectResponse(url="/choose-role?error=invalid", status_code=303)
+    
+    # Update user role
+    user.role = role
+    db.commit()
+    
+    # Redirect based on selected role
+    redirect_url = "/venue" if role == Role.VENUE else "/advertiser"
+    return RedirectResponse(url=redirect_url, status_code=303)
+
+
 @router.get("/register", response_class=HTMLResponse)
 async def register_page(request: Request, role: str = "advertiser", error: str = None, user: User = Depends(get_current_user_from_cookie), db: Session = Depends(get_db)):
     """Registration page."""
     if user:
-        return RedirectResponse(url="/advertiser", status_code=303)
+        return RedirectResponse(url="/choose-role", status_code=303)
     
     error_message = None
     if error == "passwords":

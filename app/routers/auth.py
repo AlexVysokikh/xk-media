@@ -119,11 +119,11 @@ async def browser_login(
     token = auth.create_token_for_user(user)
     
     # Determine redirect URL based on role
-    redirect_url = "/advertiser"
+    # Для админа сразу в админку, для остальных - выбор роли
     if user.role == Role.ADMIN:
         redirect_url = "/admin"
-    elif user.role == Role.VENUE:
-        redirect_url = "/venue"
+    else:
+        redirect_url = "/choose-role"
     
     # Create response with redirect
     redirect = RedirectResponse(url=redirect_url, status_code=303)
@@ -196,9 +196,8 @@ async def browser_register(
     
     token = auth.create_token_for_user(user)
     
-    # Redirect based on role
-    redirect_url = "/venue" if role == Role.VENUE else "/advertiser"
-    redirect = RedirectResponse(url=redirect_url, status_code=303)
+    # Redirect to role selection page
+    redirect = RedirectResponse(url="/choose-role", status_code=303)
     
     redirect.set_cookie(
         key=COOKIE_NAME,
