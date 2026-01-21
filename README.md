@@ -7,30 +7,87 @@ Backend для медиа-платформы с поддержкой трех т
 
 ## Возможности
 
-- Система аутентификации и авторизации с ролями
+- Система аутентификации и авторизации с ролями (JWT, OAuth2)
 - Три отдельных кабинета с разными правами доступа
 - Внешний API для QR-кодов и ТВ-экранов (омниканальность)
 - Управление рекламными кампаниями
 - Управление площадками и экранами
+- Интеграция с YooKassa для платежей
+- OAuth регистрация через Google, Yandex, VK
+- Docker и Docker Compose для развертывания
+- CI/CD через GitHub Actions
+
+## Технологии
+
+- **FastAPI** - веб-фреймворк
+- **SQLAlchemy** - ORM
+- **PostgreSQL** - база данных
+- **Alembic** - миграции БД
+- **YooKassa** - платежная система
+- **Docker** - контейнеризация
 
 ## Установка
 
 ```bash
-npm install
+# Установка зависимостей
+pip install -r requirements.txt
 ```
 
 ## Настройка
 
-Скопируйте `.env.example` в `.env` и заполните необходимые переменные.
+1. Скопируйте `.env.example` в `.env` и заполните необходимые переменные:
+   ```bash
+   cp .env.example .env
+   ```
+
+2. Настройте базу данных PostgreSQL в `.env`:
+   ```
+   DATABASE_URL=postgresql://user:password@localhost:5432/xk_media
+   ```
+
+3. Настройте YooKassa (см. `YOOKASSA_SETUP.md`):
+   ```
+   YOOKASSA_SHOP_ID=your_shop_id
+   YOOKASSA_SECRET_KEY=your_secret_key
+   ```
+
+4. Настройте OAuth провайдеры (см. `OAUTH_SETUP.md`):
+   ```
+   GOOGLE_CLIENT_ID=...
+   GOOGLE_CLIENT_SECRET=...
+   YANDEX_CLIENT_ID=...
+   YANDEX_CLIENT_SECRET=...
+   VK_CLIENT_ID=...
+   VK_CLIENT_SECRET=...
+   ```
 
 ## Запуск
 
-```bash
-# Разработка
-npm run dev
+### Локальная разработка
 
-# Продакшн
-npm start
+```bash
+# Запуск сервера
+python run_server.py
+
+# Или через uvicorn напрямую
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8080
+```
+
+### Docker
+
+```bash
+# Запуск через Docker Compose
+docker-compose up -d
+```
+
+### Миграции БД
+
+```bash
+# Создание миграций
+alembic revision --autogenerate -m "description"
+
+# Применение миграций
+alembic upgrade head
 ```
 
 ## API Endpoints

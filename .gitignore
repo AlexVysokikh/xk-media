@@ -1,9 +1,59 @@
-node_modules/
-.env
-.DS_Store
-*.log
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+pip-log.txt
+pip-delete-this-directory.txt
+*.egg-info/
 dist/
 build/
-coverage/
+*.egg
+
+# Environment
+.env
+.env.local
+.env.*.local
+env.example.txt
+
+# IDE
 .vscode/
 .idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Node (if needed)
+node_modules/
+package-lock.json
+
+# Coverage
+coverage/
+.coverage
+htmlcov/
+
+# Docker
+.dockerignore
+
+# Temporary files
+*.tmp
+*.bak
+*.cache
