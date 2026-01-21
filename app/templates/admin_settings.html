@@ -112,22 +112,6 @@
                         </div>
                     </div>
                     
-                    <div style="margin: 2rem 0; padding: 1rem; background: var(--bg-secondary); border-radius: 8px;">
-                        <h4 style="margin-top: 0;">🔴 VK OAuth</h4>
-                        <div class="form-group">
-                            <label for="vk_client_id">VK Client ID (Application ID)</label>
-                            <input type="text" id="vk_client_id" name="vk_client_id" value="{{ settings.VK_CLIENT_ID or '' }}" placeholder="12345678">
-                        </div>
-                        <div class="form-group">
-                            <label for="vk_client_secret">VK Client Secret (Secure Key)</label>
-                            <input type="password" id="vk_client_secret" name="vk_client_secret" value="{{ settings.VK_CLIENT_SECRET or '' }}" placeholder="xxxxxxxxxxxxxxxxxxxxxxxx">
-                        </div>
-                        <div class="form-hint">
-                            <strong>Redirect URI:</strong> <code id="vk-redirect">{{ settings.BASE_URL.rstrip('/') }}/oauth/vk/callback</code><br>
-                            <a href="https://dev.vk.com/apps?act=manage" target="_blank">Создать OAuth приложение →</a>
-                        </div>
-                    </div>
-                    
                     <button type="submit" class="btn btn-primary">Сохранить OAuth настройки</button>
                     <button type="button" onclick="checkOAuth()" class="btn btn-outline" style="margin-left: 0.5rem;">Проверить конфигурацию</button>
                 </form>
@@ -169,7 +153,6 @@ document.getElementById('base_url')?.addEventListener('input', function() {
     const baseUrl = this.value.trim().replace(/\/$/, '');
     if (baseUrl) {
         document.getElementById('yandex-redirect').textContent = baseUrl + '/oauth/yandex/callback';
-        document.getElementById('vk-redirect').textContent = baseUrl + '/oauth/vk/callback';
     }
 });
 

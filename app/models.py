@@ -242,7 +242,7 @@ class User(Base):
     password_reset_expires = Column(DateTime, nullable=True)
     
     # ─── OAuth провайдеры ───
-    oauth_provider = Column(String(20), nullable=True, index=True)  # yandex, vk
+    oauth_provider = Column(String(20), nullable=True, index=True)  # yandex
     oauth_provider_id = Column(String(100), nullable=True, index=True)  # ID пользователя в провайдере
     oauth_email = Column(String(255), nullable=True)  # Email из OAuth (может отличаться от основного)
     

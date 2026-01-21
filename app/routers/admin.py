@@ -36,13 +36,4 @@ async def check_oauth_config(
         "instructions": "Добавьте redirect URI в настройках приложения"
     }
     
-    # VK
-    config["providers"]["vk"] = {
-        "configured": bool(settings.VK_CLIENT_ID and settings.VK_CLIENT_SECRET),
-        "client_id": settings.VK_CLIENT_ID[:20] + "..." if settings.VK_CLIENT_ID else None,
-        "redirect_uri": f"{base_url}/auth/oauth/vk/callback",
-        "setup_url": "https://dev.vk.com/",
-        "instructions": "Добавьте redirect URI в настройках приложения"
-    }
-    
     return JSONResponse(content=config)

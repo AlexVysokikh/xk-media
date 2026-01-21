@@ -1964,12 +1964,6 @@ async def admin_settings_oauth(request: Request, user: User = Depends(require_ro
     if form.get("yandex_client_secret"):
         env_updates["YANDEX_CLIENT_SECRET"] = form.get("yandex_client_secret")
     
-    # VK OAuth
-    if form.get("vk_client_id"):
-        env_updates["VK_CLIENT_ID"] = form.get("vk_client_id")
-    if form.get("vk_client_secret"):
-        env_updates["VK_CLIENT_SECRET"] = form.get("vk_client_secret")
-    
     # Base URL
     if form.get("base_url"):
         env_updates["BASE_URL"] = form.get("base_url")

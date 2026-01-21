@@ -68,7 +68,7 @@ from app.routers import advertiser, payments, auth, pages, public_api, oauth, ad
 
 # API routers
 app.include_router(auth.router)
-app.include_router(oauth.router)  # OAuth для Yandex, VK
+app.include_router(oauth.router)  # OAuth для Yandex
 app.include_router(admin.router)  # Admin API
 app.include_router(advertiser.router)
 app.include_router(payments.router)
