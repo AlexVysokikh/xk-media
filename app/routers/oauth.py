@@ -74,7 +74,7 @@ async def yandex_oauth_callback(
     state: str = Query(None),
     error: str = Query(None),
     error_description: str = Query(None),
-    background_tasks: BackgroundTasks = None,
+    background_tasks: BackgroundTasks = BackgroundTasks(),
     db: Session = Depends(get_db),
 ):
     """Обработка callback от Yandex OAuth."""
