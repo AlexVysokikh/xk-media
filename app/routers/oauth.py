@@ -102,14 +102,30 @@ async def yandex_oauth_callback(
             return RedirectResponse(url="/login?error=oauth_failed", status_code=303)
         
         user_info = await OAuthService.get_yandex_user_info(token_data["access_token"])
-        if not user_info or "default_email" not in user_info:
-            print(f"Yandex OAuth user info error: {user_info}")
+        if not user_info:
+            print(f"Yandex OAuth user info is None")
+            return RedirectResponse(url="/login?error=oauth_failed", status_code=303)
+        
+        # Проверяем наличие email разными способами
+        email = None
+        if "default_email" in user_info:
+            email = user_info["default_email"]
+        elif "emails" in user_info and user_info["emails"]:
+            email = user_info["emails"][0]
+        elif "email" in user_info:
+            email = user_info["email"]
+        
+        if not email:
+            print(f"Yandex OAuth user info error: no email found. Keys: {list(user_info.keys())}")
+            print(f"User info: {user_info}")
             return RedirectResponse(url="/login?error=oauth_no_email", status_code=303)
     except Exception as e:
         print(f"Yandex OAuth callback exception: {e}")
+        import traceback
+        traceback.print_exc()
         return RedirectResponse(url="/login?error=oauth_failed", status_code=303)
     
-    email = user_info["default_email"].lower().strip()
+    email = email.lower().strip()
     first_name = user_info.get("first_name")
     last_name = user_info.get("last_name")
     provider_id = str(user_info.get("id"))
