@@ -38,6 +38,12 @@
 <div class="alert alert-success">{{ success }}</div>
 {% endif %}
 
+{% if request.query_params.get('error') == 'wrong_password' %}
+<div class="alert alert-error">❌ Неверный текущий пароль</div>
+{% elif request.query_params.get('error') == 'password_mismatch' %}
+<div class="alert alert-error">❌ Пароли не совпадают</div>
+{% endif %}
+
 <div class="grid grid-2">
     <!-- Personal Info -->
     <div class="card">
