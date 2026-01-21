@@ -42,6 +42,44 @@ async def landing(request: Request, user: User = Depends(get_current_user_from_c
     return templates.TemplateResponse("landing.html", {"request": request})
 
 
+@router.post("/landing/advertiser-request", response_class=HTMLResponse)
+async def advertiser_request(
+    request: Request,
+    name: str = Form(...),
+    email: str = Form(...),
+    phone: str = Form(...),
+    company: str = Form(None),
+    description: str = Form(...),
+    db: Session = Depends(get_db),
+):
+    """Обработка формы заявки рекламодателя с лендинга."""
+    try:
+        # Здесь можно сохранить заявку в БД или отправить на email
+        # Пока просто возвращаем успех
+        # TODO: Добавить модель AdvertiserRequest для сохранения заявок
+        
+        # Логируем заявку (в продакшене можно отправить на email или сохранить в БД)
+        print(f"Новая заявка от рекламодателя: {name} ({email}), телефон: {phone}, компания: {company}")
+        print(f"Описание: {description}")
+        
+        return templates.TemplateResponse(
+            "landing.html",
+            {
+                "request": request,
+                "success_message": "Спасибо! Мы получили вашу заявку и свяжемся с вами в ближайшее время."
+            }
+        )
+    except Exception as e:
+        print(f"Ошибка при обработке заявки: {e}")
+        return templates.TemplateResponse(
+            "landing.html",
+            {
+                "request": request,
+                "error_message": "Произошла ошибка при отправке заявки. Попробуйте еще раз."
+            }
+        )
+
+
 @router.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request, error: str = None, user: User = Depends(get_current_user_from_cookie)):
     """Login page."""

@@ -59,34 +59,6 @@
         margin-top: 3rem;
     }
 
-    .hero-stats {
-        display: flex;
-        gap: 3rem;
-        justify-content: center;
-        margin-top: 4rem;
-        flex-wrap: wrap;
-    }
-
-    .hero-stat {
-        text-align: center;
-    }
-
-    .hero-stat-value {
-        font-size: 2.5rem;
-        font-weight: 900;
-        font-family: 'JetBrains Mono', monospace;
-        background: linear-gradient(135deg, var(--accent), var(--accent-secondary));
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-    }
-
-    .hero-stat-label {
-        color: var(--text-muted);
-        font-size: 0.9rem;
-        margin-top: 0.5rem;
-    }
-
     .features {
         margin-bottom: 6rem;
     }
@@ -177,6 +149,197 @@
         line-height: 1.7;
     }
 
+    .advertiser-form-section {
+        background: linear-gradient(135deg, rgba(0, 212, 255, 0.05), rgba(131, 56, 236, 0.05));
+        border-radius: 24px;
+        border: 1px solid var(--border);
+        padding: 4rem 2rem;
+        margin-bottom: 6rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .advertiser-form-section::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(0, 212, 255, 0.1) 0%, transparent 70%);
+        animation: rotate 20s linear infinite;
+    }
+
+    @keyframes rotate {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .advertiser-form-content {
+        position: relative;
+        z-index: 1;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .advertiser-form {
+        margin-top: 2rem;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+        text-align: left;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        color: var(--text);
+        font-weight: 600;
+    }
+
+    .form-group input,
+    .form-group textarea {
+        width: 100%;
+        padding: 0.875rem 1.25rem;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        color: var(--text);
+        font-size: 1rem;
+        transition: all 0.3s;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+    }
+
+    .form-group textarea {
+        min-height: 120px;
+        resize: vertical;
+    }
+
+    .venue-cta-section {
+        text-align: center;
+        padding: 6rem 2rem;
+        background: linear-gradient(135deg, rgba(131, 56, 236, 0.1), rgba(0, 212, 255, 0.1));
+        border-radius: 24px;
+        border: 2px solid var(--accent);
+        margin-bottom: 6rem;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .venue-cta-section::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(131, 56, 236, 0.15) 0%, transparent 70%);
+        animation: rotate 25s linear infinite reverse;
+    }
+
+    .venue-cta-content {
+        position: relative;
+        z-index: 1;
+    }
+
+    .venue-cta-button {
+        display: inline-block;
+        font-size: clamp(2.5rem, 6vw, 4.5rem);
+        font-weight: 900;
+        padding: 2.5rem 5rem;
+        background: linear-gradient(135deg, var(--accent), var(--accent-secondary), var(--accent-tertiary));
+        color: white;
+        border-radius: 24px;
+        text-decoration: none;
+        transition: all 0.3s;
+        box-shadow: 0 15px 50px rgba(0, 212, 255, 0.4);
+        margin-bottom: 2rem;
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+        animation: pulse 2s ease-in-out infinite;
+        border: 3px solid rgba(255, 255, 255, 0.2);
+    }
+
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); box-shadow: 0 10px 40px rgba(0, 212, 255, 0.3); }
+        50% { transform: scale(1.05); box-shadow: 0 15px 50px rgba(0, 212, 255, 0.5); }
+    }
+
+    .venue-cta-button:hover {
+        transform: scale(1.08);
+        box-shadow: 0 20px 60px rgba(0, 212, 255, 0.4);
+    }
+
+    .venue-cta-description {
+        font-size: 1.5rem;
+        color: var(--text);
+        max-width: 700px;
+        margin: 0 auto;
+        line-height: 1.8;
+        font-weight: 500;
+    }
+    
+    .venue-cta-description strong {
+        color: var(--accent);
+        font-size: 1.75rem;
+        display: block;
+        margin-bottom: 0.5rem;
+    }
+
+    .how-it-works {
+        margin-bottom: 6rem;
+    }
+
+    .steps {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 2.5rem;
+        margin-top: 3rem;
+    }
+
+    .step {
+        text-align: center;
+        padding: 2.5rem 2rem;
+        position: relative;
+        background: var(--bg-secondary);
+        border-radius: 16px;
+        border: 1px solid var(--border);
+        transition: all 0.3s;
+    }
+
+    .step:hover {
+        transform: translateY(-5px);
+        border-color: var(--accent);
+        box-shadow: 0 10px 30px rgba(0, 212, 255, 0.1);
+    }
+
+    .step-icon {
+        font-size: 3.5rem;
+        margin-bottom: 1.5rem;
+        display: inline-block;
+        filter: drop-shadow(0 0 15px rgba(0, 212, 255, 0.3));
+    }
+
+    .step h3 {
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+        color: var(--accent);
+        font-weight: 700;
+    }
+
+    .step p {
+        color: var(--text-muted);
+        font-size: 1rem;
+        line-height: 1.7;
+    }
+
     .cta-section {
         text-align: center;
         padding: 6rem 2rem;
@@ -197,11 +360,6 @@
         height: 200%;
         background: radial-gradient(circle, rgba(0, 212, 255, 0.1) 0%, transparent 70%);
         animation: rotate 20s linear infinite;
-    }
-
-    @keyframes rotate {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
     }
 
     .cta-content {
@@ -228,61 +386,23 @@
         margin-right: auto;
     }
 
-    .how-it-works {
-        margin-bottom: 6rem;
+    .success-message {
+        background: rgba(0, 212, 255, 0.1);
+        border: 1px solid var(--accent);
+        border-radius: 12px;
+        padding: 1rem;
+        margin-top: 1rem;
+        color: var(--accent);
+        display: none;
     }
 
-    .steps {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 2rem;
-        margin-top: 3rem;
-    }
-
-    .step {
-        text-align: center;
-        padding: 2rem;
-        position: relative;
-    }
-
-    .step-number {
-        width: 60px;
-        height: 60px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, var(--accent), var(--accent-tertiary));
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.5rem;
-        font-weight: 900;
-        font-family: 'JetBrains Mono', monospace;
-        margin: 0 auto 1.5rem;
-        box-shadow: var(--glow);
-    }
-
-    .step h3 {
-        font-size: 1.25rem;
-        margin-bottom: 0.75rem;
-        color: var(--text);
-    }
-
-    .step p {
-        color: var(--text-muted);
-        font-size: 0.95rem;
-        line-height: 1.6;
+    .success-message.show {
+        display: block;
     }
 
     @media (max-width: 768px) {
         .hero {
             padding: 4rem 1.5rem;
-        }
-
-        .hero-stats {
-            gap: 2rem;
-        }
-
-        .hero-stat-value {
-            font-size: 2rem;
         }
 
         .feature-card {
@@ -291,6 +411,15 @@
 
         .steps {
             grid-template-columns: 1fr;
+        }
+
+        .venue-cta-button {
+            padding: 1.5rem 2rem;
+            font-size: 1.75rem;
+        }
+
+        .advertiser-form-section {
+            padding: 3rem 1.5rem;
         }
     }
 </style>
@@ -315,20 +444,58 @@
                 📺 Стать площадкой
             </a>
         </div>
-        <div class="hero-stats">
-            <div class="hero-stat">
-                <div class="hero-stat-value">1000+</div>
-                <div class="hero-stat-label">ТВ-экранов</div>
+    </div>
+</div>
+
+<div class="advertiser-form-section">
+    <div class="advertiser-form-content">
+        <h2 class="section-title">Хочу рекламировать свои услуги/товары локально</h2>
+        <p class="section-subtitle">Заполните форму, и мы свяжемся с вами для настройки рекламной кампании</p>
+        
+        <form class="advertiser-form" method="POST" action="/landing/advertiser-request" id="advertiserForm">
+            <div class="form-group">
+                <label for="name">Ваше имя *</label>
+                <input type="text" id="name" name="name" required placeholder="Иван Иванов">
             </div>
-            <div class="hero-stat">
-                <div class="hero-stat-value">500+</div>
-                <div class="hero-stat-label">Рекламодателей</div>
+            
+            <div class="form-group">
+                <label for="email">Email *</label>
+                <input type="email" id="email" name="email" required placeholder="ivan@example.com">
             </div>
-            <div class="hero-stat">
-                <div class="hero-stat-value">1M+</div>
-                <div class="hero-stat-label">Показов/месяц</div>
+            
+            <div class="form-group">
+                <label for="phone">Телефон *</label>
+                <input type="tel" id="phone" name="phone" required placeholder="+7 (999) 123-45-67">
             </div>
-        </div>
+            
+            <div class="form-group">
+                <label for="company">Название компании/бренда</label>
+                <input type="text" id="company" name="company" placeholder="ООО «Моя компания»">
+            </div>
+            
+            <div class="form-group">
+                <label for="description">Опишите, что вы хотите рекламировать *</label>
+                <textarea id="description" name="description" required placeholder="Например: рекламирую услуги автосервиса в Москве, хочу привлечь клиентов из района..."></textarea>
+            </div>
+            
+            <button type="submit" class="btn btn-primary btn-lg" style="width: 100%;">
+                Отправить заявку
+            </button>
+            
+            <div class="success-message" id="successMessage">
+                ✅ Спасибо! Мы получили вашу заявку и свяжемся с вами в ближайшее время.
+            </div>
+            {% if success_message %}
+            <div class="success-message show">
+                ✅ {{ success_message }}
+            </div>
+            {% endif %}
+            {% if error_message %}
+            <div class="success-message show" style="background: rgba(255, 0, 0, 0.1); border-color: #ff0000; color: #ff0000;">
+                ❌ {{ error_message }}
+            </div>
+            {% endif %}
+        </form>
     </div>
 </div>
 
@@ -381,31 +548,44 @@
     </div>
 </div>
 
+<div class="venue-cta-section">
+    <div class="venue-cta-content">
+        <a href="/register?role=venue" class="venue-cta-button">
+            ХОЧУ ПОЛУЧАТЬ!
+        </a>
+        <p class="venue-cta-description">
+            <strong>От трафика в моем заведении</strong><br>
+            Монетизируйте посетителей вашего заведения. Установите ТВ-экран и получайте доход от рекламы, 
+            которая показывается вашим гостям. Автоматические выплаты и прозрачная статистика.
+        </p>
+    </div>
+</div>
+
 <div class="how-it-works">
     <h2 class="section-title">Как это работает?</h2>
     <p class="section-subtitle">Простой процесс от регистрации до первых показов</p>
     
     <div class="steps">
         <div class="step">
-            <div class="step-number">1</div>
+            <div class="step-icon">📝</div>
             <h3>Регистрация</h3>
             <p>Создайте аккаунт рекламодателя или площадки. Заполните профиль и подтвердите данные.</p>
         </div>
         
         <div class="step">
-            <div class="step-number">2</div>
+            <div class="step-icon">💳</div>
             <h3>Пополнение баланса</h3>
             <p>Пополните баланс через YooKassa. Безопасная оплата картой или электронными кошельками.</p>
         </div>
         
         <div class="step">
-            <div class="step-number">3</div>
+            <div class="step-icon">🎬</div>
             <h3>Создание кампании</h3>
             <p>Выберите ТВ-экраны, укажите период размещения, добавьте ссылку и описание рекламы.</p>
         </div>
         
         <div class="step">
-            <div class="step-number">4</div>
+            <div class="step-icon">📈</div>
             <h3>Показы и аналитика</h3>
             <p>Ваша реклама появляется на экранах. Отслеживайте статистику в реальном времени.</p>
         </div>
@@ -426,4 +606,39 @@
         </div>
     </div>
 </div>
+
+<script>
+document.getElementById('advertiserForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const submitButton = this.querySelector('button[type="submit"]');
+    const successMessage = document.getElementById('successMessage');
+    
+    submitButton.disabled = true;
+    submitButton.textContent = 'Отправка...';
+    
+    try {
+        const response = await fetch('/landing/advertiser-request', {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (response.ok) {
+            successMessage.classList.add('show');
+            this.reset();
+            setTimeout(() => {
+                successMessage.classList.remove('show');
+            }, 5000);
+        } else {
+            alert('Ошибка при отправке формы. Попробуйте еще раз.');
+        }
+    } catch (error) {
+        alert('Ошибка при отправке формы. Попробуйте еще раз.');
+    } finally {
+        submitButton.disabled = false;
+        submitButton.textContent = 'Отправить заявку';
+    }
+});
+</script>
 {% endblock %}

@@ -13,6 +13,7 @@ from app.models import User, Role, SiteSettings
 from app.services.auth_service import AuthService
 from app.services.oauth_service import OAuthService
 from app.security import create_access_token
+from app.settings import settings
 
 router = APIRouter(prefix="/auth/oauth", tags=["OAuth"])
 
@@ -50,14 +51,21 @@ def set_cookie_and_redirect(response: RedirectResponse, user: User, role: str):
 @router.get("/google")
 async def google_oauth_start(role: str = Query("advertiser", description="Роль: advertiser или venue")):
     """Начать OAuth авторизацию через Google."""
+    if not settings.GOOGLE_CLIENT_ID:
+        return RedirectResponse(url="/login?error=oauth_not_configured", status_code=303)
+    
     if role not in [Role.ADVERTISER, Role.VENUE]:
         role = Role.ADVERTISER
     
-    state = OAuthService.generate_state()
-    oauth_states[state] = {"role": role, "provider": "google"}
-    
-    auth_url = OAuthService.get_google_auth_url(state, role)
-    return RedirectResponse(url=auth_url)
+    try:
+        state = OAuthService.generate_state()
+        oauth_states[state] = {"role": role, "provider": "google"}
+        
+        auth_url = OAuthService.get_google_auth_url(state, role)
+        return RedirectResponse(url=auth_url)
+    except Exception as e:
+        print(f"Google OAuth start error: {e}")
+        return RedirectResponse(url="/login?error=oauth_config_error", status_code=303)
 
 
 @router.get("/google/callback")
@@ -143,14 +151,21 @@ async def google_oauth_callback(
 @router.get("/yandex")
 async def yandex_oauth_start(role: str = Query("advertiser", description="Роль: advertiser или venue")):
     """Начать OAuth авторизацию через Yandex."""
+    if not settings.YANDEX_CLIENT_ID:
+        return RedirectResponse(url="/login?error=oauth_not_configured", status_code=303)
+    
     if role not in [Role.ADVERTISER, Role.VENUE]:
         role = Role.ADVERTISER
     
-    state = OAuthService.generate_state()
-    oauth_states[state] = {"role": role, "provider": "yandex"}
-    
-    auth_url = OAuthService.get_yandex_auth_url(state, role)
-    return RedirectResponse(url=auth_url)
+    try:
+        state = OAuthService.generate_state()
+        oauth_states[state] = {"role": role, "provider": "yandex"}
+        
+        auth_url = OAuthService.get_yandex_auth_url(state, role)
+        return RedirectResponse(url=auth_url)
+    except Exception as e:
+        print(f"Yandex OAuth start error: {e}")
+        return RedirectResponse(url="/login?error=oauth_config_error", status_code=303)
 
 
 @router.get("/yandex/callback")
@@ -225,14 +240,21 @@ async def yandex_oauth_callback(
 @router.get("/vk")
 async def vk_oauth_start(role: str = Query("advertiser", description="Роль: advertiser или venue")):
     """Начать OAuth авторизацию через VK."""
+    if not settings.VK_CLIENT_ID:
+        return RedirectResponse(url="/login?error=oauth_not_configured", status_code=303)
+    
     if role not in [Role.ADVERTISER, Role.VENUE]:
         role = Role.ADVERTISER
     
-    state = OAuthService.generate_state()
-    oauth_states[state] = {"role": role, "provider": "vk"}
-    
-    auth_url = OAuthService.get_vk_auth_url(state, role)
-    return RedirectResponse(url=auth_url)
+    try:
+        state = OAuthService.generate_state()
+        oauth_states[state] = {"role": role, "provider": "vk"}
+        
+        auth_url = OAuthService.get_vk_auth_url(state, role)
+        return RedirectResponse(url=auth_url)
+    except Exception as e:
+        print(f"VK OAuth start error: {e}")
+        return RedirectResponse(url="/login?error=oauth_config_error", status_code=303)
 
 
 @router.get("/vk/callback")

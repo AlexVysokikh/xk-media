@@ -16,12 +16,20 @@ class OAuthService:
     @staticmethod
     def get_google_auth_url(state: str, role: str = "advertiser") -> str:
         """Получить URL для авторизации через Google."""
+        if not settings.GOOGLE_CLIENT_ID:
+            raise ValueError("GOOGLE_CLIENT_ID not configured")
+        
+        # Убираем trailing slash из BASE_URL
+        base_url = settings.BASE_URL.rstrip('/')
+        # Используем полный URL для redirect_uri
+        redirect_uri = f"{base_url}/auth/oauth/google/callback"
+        
         params = {
             "client_id": settings.GOOGLE_CLIENT_ID,
-            "redirect_uri": f"{settings.BASE_URL}/auth/oauth/google/callback",
+            "redirect_uri": redirect_uri,
             "response_type": "code",
             "scope": "openid email profile",
-            "state": f"{state}:{role}",  # Сохраняем роль в state
+            "state": state,
             "access_type": "offline",
             "prompt": "consent"
         }
@@ -31,7 +39,11 @@ class OAuthService:
     async def get_google_token(code: str) -> Optional[Dict[str, Any]]:
         """Обменять код на токен Google."""
         if not settings.GOOGLE_CLIENT_ID or not settings.GOOGLE_CLIENT_SECRET:
+            print("Google OAuth credentials not configured")
             return None
+        
+        base_url = settings.BASE_URL.rstrip('/')
+        redirect_uri = f"{base_url}/auth/oauth/google/callback"
         
         async with httpx.AsyncClient() as client:
             try:
@@ -42,12 +54,22 @@ class OAuthService:
                         "client_secret": settings.GOOGLE_CLIENT_SECRET,
                         "code": code,
                         "grant_type": "authorization_code",
-                        "redirect_uri": f"{settings.BASE_URL}/auth/oauth/google/callback"
+                        "redirect_uri": redirect_uri
                     },
+                    headers={"Content-Type": "application/x-www-form-urlencoded"},
                     timeout=10.0
                 )
-                response.raise_for_status()
+                if response.status_code != 200:
+                    error_text = response.text
+                    print(f"Google token error {response.status_code}: {error_text}")
+                    print(f"Redirect URI used: {redirect_uri}")
+                    return None
                 return response.json()
+            except httpx.HTTPStatusError as e:
+                error_detail = e.response.text if e.response else str(e)
+                print(f"Google token HTTP error: {e.response.status_code} - {error_detail}")
+                print(f"Redirect URI used: {redirect_uri}")
+                return None
             except Exception as e:
                 print(f"Google token error: {e}")
                 return None
@@ -71,11 +93,17 @@ class OAuthService:
     @staticmethod
     def get_yandex_auth_url(state: str, role: str = "advertiser") -> str:
         """Получить URL для авторизации через Yandex."""
+        if not settings.YANDEX_CLIENT_ID:
+            raise ValueError("YANDEX_CLIENT_ID not configured")
+        
+        base_url = settings.BASE_URL.rstrip('/')
+        redirect_uri = f"{base_url}/auth/oauth/yandex/callback"
+        
         params = {
             "client_id": settings.YANDEX_CLIENT_ID,
-            "redirect_uri": f"{settings.BASE_URL}/auth/oauth/yandex/callback",
+            "redirect_uri": redirect_uri,
             "response_type": "code",
-            "state": f"{state}:{role}"
+            "state": state
         }
         return f"https://oauth.yandex.ru/authorize?{urlencode(params)}"
     
@@ -83,7 +111,11 @@ class OAuthService:
     async def get_yandex_token(code: str) -> Optional[Dict[str, Any]]:
         """Обменять код на токен Yandex."""
         if not settings.YANDEX_CLIENT_ID or not settings.YANDEX_CLIENT_SECRET:
+            print("Yandex OAuth credentials not configured")
             return None
+        
+        base_url = settings.BASE_URL.rstrip('/')
+        redirect_uri = f"{base_url}/auth/oauth/yandex/callback"
         
         async with httpx.AsyncClient() as client:
             try:
@@ -93,12 +125,23 @@ class OAuthService:
                         "grant_type": "authorization_code",
                         "code": code,
                         "client_id": settings.YANDEX_CLIENT_ID,
-                        "client_secret": settings.YANDEX_CLIENT_SECRET
+                        "client_secret": settings.YANDEX_CLIENT_SECRET,
+                        "redirect_uri": redirect_uri
                     },
+                    headers={"Content-Type": "application/x-www-form-urlencoded"},
                     timeout=10.0
                 )
-                response.raise_for_status()
+                if response.status_code != 200:
+                    error_text = response.text
+                    print(f"Yandex token error {response.status_code}: {error_text}")
+                    print(f"Redirect URI used: {redirect_uri}")
+                    return None
                 return response.json()
+            except httpx.HTTPStatusError as e:
+                error_detail = e.response.text if e.response else str(e)
+                print(f"Yandex token HTTP error: {e.response.status_code} - {error_detail}")
+                print(f"Redirect URI used: {redirect_uri}")
+                return None
             except Exception as e:
                 print(f"Yandex token error: {e}")
                 return None
@@ -123,12 +166,18 @@ class OAuthService:
     @staticmethod
     def get_vk_auth_url(state: str, role: str = "advertiser") -> str:
         """Получить URL для авторизации через VK."""
+        if not settings.VK_CLIENT_ID:
+            raise ValueError("VK_CLIENT_ID not configured")
+        
+        base_url = settings.BASE_URL.rstrip('/')
+        redirect_uri = f"{base_url}/auth/oauth/vk/callback"
+        
         params = {
             "client_id": settings.VK_CLIENT_ID,
-            "redirect_uri": f"{settings.BASE_URL}/auth/oauth/vk/callback",
+            "redirect_uri": redirect_uri,
             "response_type": "code",
             "scope": "email",
-            "state": f"{state}:{role}",
+            "state": state,
             "v": "5.131"  # Версия API VK
         }
         return f"https://oauth.vk.com/authorize?{urlencode(params)}"
@@ -137,7 +186,11 @@ class OAuthService:
     async def get_vk_token(code: str) -> Optional[Dict[str, Any]]:
         """Обменять код на токен VK."""
         if not settings.VK_CLIENT_ID or not settings.VK_CLIENT_SECRET:
+            print("VK OAuth credentials not configured")
             return None
+        
+        base_url = settings.BASE_URL.rstrip('/')
+        redirect_uri = f"{base_url}/auth/oauth/vk/callback"
         
         async with httpx.AsyncClient() as client:
             try:
@@ -146,13 +199,27 @@ class OAuthService:
                     params={
                         "client_id": settings.VK_CLIENT_ID,
                         "client_secret": settings.VK_CLIENT_SECRET,
-                        "redirect_uri": f"{settings.BASE_URL}/auth/oauth/vk/callback",
+                        "redirect_uri": redirect_uri,
                         "code": code
                     },
                     timeout=10.0
                 )
-                response.raise_for_status()
-                return response.json()
+                if response.status_code != 200:
+                    error_text = response.text
+                    print(f"VK token error {response.status_code}: {error_text}")
+                    print(f"Redirect URI used: {redirect_uri}")
+                    return None
+                data = response.json()
+                if "error" in data:
+                    print(f"VK token error: {data.get('error_description', data.get('error'))}")
+                    print(f"Redirect URI used: {redirect_uri}")
+                    return None
+                return data
+            except httpx.HTTPStatusError as e:
+                error_detail = e.response.text if e.response else str(e)
+                print(f"VK token HTTP error: {e.response.status_code} - {error_detail}")
+                print(f"Redirect URI used: {redirect_uri}")
+                return None
             except Exception as e:
                 print(f"VK token error: {e}")
                 return None

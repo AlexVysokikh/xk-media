@@ -107,6 +107,18 @@
         <div class="alert alert-error">{{ error }}</div>
         {% endif %}
 
+        {% if request.query_params.get('error') == 'oauth_invalid' %}
+        <div class="alert alert-error">❌ Ошибка авторизации: неверный запрос. Попробуйте еще раз.</div>
+        {% elif request.query_params.get('error') == 'oauth_failed' %}
+        <div class="alert alert-error">❌ Ошибка авторизации: не удалось получить доступ. Проверьте настройки OAuth.</div>
+        {% elif request.query_params.get('error') == 'oauth_no_email' %}
+        <div class="alert alert-error">❌ Ошибка авторизации: не удалось получить email. Убедитесь, что вы предоставили доступ к email.</div>
+        {% elif request.query_params.get('error') == 'oauth_not_configured' %}
+        <div class="alert alert-error">⚠️ OAuth не настроен. Обратитесь к администратору.</div>
+        {% elif request.query_params.get('error') == 'oauth_config_error' %}
+        <div class="alert alert-error">❌ Ошибка конфигурации OAuth. Обратитесь к администратору.</div>
+        {% endif %}
+
         {% if request.query_params.get('success') == 'password_reset' %}
         <div class="alert alert-success">✓ Пароль успешно изменён. Войдите с новым паролем.</div>
         {% endif %}
