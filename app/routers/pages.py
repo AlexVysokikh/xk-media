@@ -679,7 +679,7 @@ async def advertiser_subscriptions(request: Request, error: str = None, success:
 
 
 @router.post("/advertiser/subscriptions/create", response_class=HTMLResponse)
-async def advertiser_subscriptions_create(request: Request, user: User = Depends(require_role_for_page(Role.ADVERTISER)), db: Session = Depends(get_db)):
+async def advertiser_subscriptions_create(request: Request, background_tasks: BackgroundTasks, user: User = Depends(require_role_for_page(Role.ADVERTISER)), db: Session = Depends(get_db)):
     """Create subscription from advertiser balance."""
     form = await request.form()
     
