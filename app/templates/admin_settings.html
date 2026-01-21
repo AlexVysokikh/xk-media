@@ -82,6 +82,16 @@
         
         <div class="card" style="margin-top: 1.5rem;">
             <div class="card-header">
+                <h3>🔐 OAuth настройки</h3>
+            </div>
+            <div class="card-content">
+                <div id="oauth-status">Загрузка...</div>
+                <button onclick="checkOAuth()" class="btn btn-sm btn-outline" style="margin-top: 1rem;">Проверить OAuth</button>
+            </div>
+        </div>
+        
+        <div class="card" style="margin-top: 1.5rem;">
+            <div class="card-header">
                 <h3>📝 Пример оферты</h3>
             </div>
             <div class="card-content">
@@ -106,6 +116,44 @@
         </div>
     </div>
 </div>
+
+<script>
+async function checkOAuth() {
+    const statusDiv = document.getElementById('oauth-status');
+    statusDiv.innerHTML = 'Проверка...';
+    
+    try {
+        const response = await fetch('/api/admin/oauth/check');
+        const data = await response.json();
+        
+        let html = `<div style="font-size: 0.9rem;">`;
+        html += `<p><strong>Base URL:</strong> ${data.base_url}</p>`;
+        
+        for (const [provider, config] of Object.entries(data.providers)) {
+            const providerName = provider.charAt(0).toUpperCase() + provider.slice(1);
+            const status = config.configured ? '✅' : '❌';
+            html += `<div style="margin: 1rem 0; padding: 1rem; background: var(--bg-secondary); border-radius: 8px;">`;
+            html += `<strong>${status} ${providerName}</strong><br>`;
+            if (config.configured) {
+                html += `Client ID: ${config.client_id}<br>`;
+            } else {
+                html += `<span style="color: var(--error);">Не настроен</span><br>`;
+            }
+            html += `Redirect URI: <code style="background: rgba(0,0,0,0.1); padding: 2px 6px; border-radius: 4px;">${config.redirect_uri}</code><br>`;
+            html += `<a href="${config.setup_url}" target="_blank" style="color: var(--accent); font-size: 0.85rem;">${config.instructions} →</a>`;
+            html += `</div>`;
+        }
+        
+        html += `</div>`;
+        statusDiv.innerHTML = html;
+    } catch (error) {
+        statusDiv.innerHTML = `<div style="color: var(--error);">Ошибка: ${error.message}</div>`;
+    }
+}
+
+// Автоматическая проверка при загрузке
+window.addEventListener('load', checkOAuth);
+</script>
 
 <style>
 .form-row {

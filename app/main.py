@@ -64,11 +64,12 @@ async def health_check():
 
 
 # Include routers
-from app.routers import advertiser, payments, auth, pages, public_api, oauth
+from app.routers import advertiser, payments, auth, pages, public_api, oauth, admin
 
 # API routers
 app.include_router(auth.router)
 app.include_router(oauth.router)  # OAuth для Google, Yandex, VK
+app.include_router(admin.router)  # Admin API
 app.include_router(advertiser.router)
 app.include_router(payments.router)
 app.include_router(public_api.router)  # Public API для омниканальности
