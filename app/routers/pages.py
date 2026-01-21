@@ -95,6 +95,51 @@ async def advertiser_request(
         )
 
 
+@router.post("/landing/venue-request", response_class=HTMLResponse)
+async def venue_request(
+    request: Request,
+    name: str = Form(...),
+    email: str = Form(...),
+    phone: str = Form(...),
+    venue_name: str = Form(None),
+    description: str = Form(None),
+    db: Session = Depends(get_db),
+):
+    """Обработка формы заявки площадки с лендинга (кнопка "ХОЧУ ПОЛУЧАТЬ!")."""
+    try:
+        # Отправляем уведомления
+        from app.services.notification_service import NotificationService
+        
+        await NotificationService.notify_venue_request(
+            name=name,
+            email=email,
+            phone=phone,
+            venue_name=venue_name,
+            description=description
+        )
+        
+        print(f"Новая заявка от площадки: {name} ({email}), телефон: {phone}, заведение: {venue_name}")
+        
+        return templates.TemplateResponse(
+            "landing.html",
+            {
+                "request": request,
+                "success_message": "Спасибо! Мы получили вашу заявку и свяжемся с вами в ближайшее время."
+            }
+        )
+    except Exception as e:
+        print(f"Ошибка при обработке заявки площадки: {e}")
+        import traceback
+        traceback.print_exc()
+        return templates.TemplateResponse(
+            "landing.html",
+            {
+                "request": request,
+                "error_message": "Произошла ошибка при отправке заявки. Попробуйте еще раз."
+            }
+        )
+
+
 @router.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request, error: str = None, user: User = Depends(get_current_user_from_cookie)):
     """Login page."""
