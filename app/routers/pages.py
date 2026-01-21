@@ -4,11 +4,16 @@ HTML pages routes using Jinja2 templates.
 
 import os
 import re
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.base import MIMEBase
+from email import encoders
 from pathlib import Path
 from datetime import datetime, date
 from decimal import Decimal
 
-from fastapi import APIRouter, Request, Depends, Form
+from fastapi import APIRouter, Request, Depends, Form, UploadFile, File
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session, joinedload
@@ -326,6 +331,133 @@ async def advertiser_dashboard(request: Request, user: User = Depends(require_ro
         "request": request, "user": user, "stats": stats, 
         "payments": payments, "campaigns": campaigns, "subscriptions": subscriptions
     })
+
+
+def send_video_email(user_email: str, user_name: str, company_name: str, comment: str, video_path: str) -> bool:
+    """Отправить ролик и комментарий на почту content@xk-media.ru."""
+    try:
+        # Настройки SMTP (можно вынести в settings)
+        smtp_server = os.getenv("SMTP_SERVER", "smtp.yandex.ru")
+        smtp_port = int(os.getenv("SMTP_PORT", "465"))
+        smtp_user = os.getenv("SMTP_USER", "")
+        smtp_password = os.getenv("SMTP_PASSWORD", "")
+        from_email = os.getenv("SMTP_FROM", smtp_user)
+        
+        to_email = "content@xk-media.ru"
+        
+        # Если SMTP не настроен, просто логируем
+        if not smtp_user or not smtp_password:
+            print(f"SMTP не настроен. Ролик от {user_email} ({user_name}) сохранен: {video_path}")
+            print(f"Комментарий: {comment}")
+            print(f"Отправить на: {to_email}")
+            return True  # Возвращаем True, так как файл сохранен
+        
+        # Создаем сообщение
+        msg = MIMEMultipart()
+        msg['From'] = from_email
+        msg['To'] = to_email
+        msg['Subject'] = f"Новый ролик от рекламодателя: {user_name or user_email}"
+        
+        # Текст сообщения
+        body = f"""
+Новый ролик от рекламодателя
+
+Рекламодатель: {user_name or 'Не указано'}
+Email: {user_email}
+Компания: {company_name or 'Не указано'}
+Дата отправки: {datetime.now().strftime('%d.%m.%Y %H:%M')}
+
+Комментарий:
+{comment or 'Комментарий не указан'}
+
+---
+Это автоматическое сообщение от системы XK Media.
+"""
+        msg.attach(MIMEText(body, 'plain', 'utf-8'))
+        
+        # Прикрепляем файл
+        if os.path.exists(video_path):
+            with open(video_path, "rb") as attachment:
+                part = MIMEBase('application', 'octet-stream')
+                part.set_payload(attachment.read())
+            
+            encoders.encode_base64(part)
+            part.add_header(
+                'Content-Disposition',
+                f'attachment; filename= {os.path.basename(video_path)}'
+            )
+            msg.attach(part)
+        
+        # Отправляем email
+        if smtp_port == 465:
+            server = smtplib.SMTP_SSL(smtp_server, smtp_port)
+        else:
+            server = smtplib.SMTP(smtp_server, smtp_port)
+            server.starttls()
+        
+        server.login(smtp_user, smtp_password)
+        server.send_message(msg)
+        server.quit()
+        
+        return True
+    except Exception as e:
+        print(f"Ошибка отправки email: {e}")
+        # Все равно возвращаем True, так как файл сохранен
+        return True
+
+
+@router.post("/advertiser/upload-video", response_class=HTMLResponse)
+async def advertiser_upload_video(
+    request: Request,
+    video_file: UploadFile = File(...),
+    comment: str = Form(None),
+    user: User = Depends(require_role_for_page(Role.ADVERTISER)),
+    db: Session = Depends(get_db),
+):
+    """Обработка загрузки ролика от рекламодателя."""
+    try:
+        # Проверка размера файла (100 МБ)
+        file_content = await video_file.read()
+        file_size = len(file_content)
+        max_size = 100 * 1024 * 1024  # 100 МБ
+        
+        if file_size > max_size:
+            return RedirectResponse(url="/advertiser?error=video_too_large", status_code=303)
+        
+        # Проверка типа файла
+        allowed_extensions = ['.mp4', '.avi', '.mov', '.mkv', '.webm']
+        file_ext = Path(video_file.filename).suffix.lower()
+        if file_ext not in allowed_extensions:
+            return RedirectResponse(url="/advertiser?error=video_invalid_format", status_code=303)
+        
+        # Создаем директорию для загрузок, если её нет
+        upload_dir = Path("app/static/uploads/videos")
+        upload_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Генерируем уникальное имя файла
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        safe_filename = f"{user.id}_{timestamp}_{video_file.filename}"
+        file_path = upload_dir / safe_filename
+        
+        # Сохраняем файл
+        with open(file_path, "wb") as f:
+            f.write(file_content)
+        
+        # Отправляем на почту
+        user_name = f"{user.first_name or ''} {user.last_name or ''}".strip() or user.email
+        send_video_email(
+            user_email=user.email,
+            user_name=user_name,
+            company_name=user.company_name or "",
+            comment=comment or "",
+            video_path=str(file_path)
+        )
+        
+        return RedirectResponse(url="/advertiser?success=video_sent", status_code=303)
+        
+    except Exception as e:
+        print(f"Ошибка загрузки ролика: {e}")
+        return RedirectResponse(url="/advertiser?error=video_upload_failed", status_code=303)
 
 
 @router.get("/advertiser/payments", response_class=HTMLResponse)
