@@ -99,10 +99,11 @@ class OAuthService:
             "client_id": settings.VK_CLIENT_ID,
             "redirect_uri": redirect_uri,
             "response_type": "code",
-            "scope": "email",
+            "scope": "email",  # Право на доступ к email
             "state": state,
             "v": "5.131"  # Версия API VK
         }
+        # Если scope вызывает проблемы, можно убрать его (но тогда email не будет доступен)
         return f"https://oauth.vk.com/authorize?{urlencode(params)}"
     
     @staticmethod
