@@ -534,8 +534,14 @@ async def advertiser_create_payment_page(request: Request, user: User = Depends(
         db.commit()
         return RedirectResponse(url=payment.pay_url, status_code=303)
     except Exception as e:
-        print(f"YooKassa error: {e}")
-        return RedirectResponse(url="/advertiser/payments?warning=yookassa", status_code=303)
+        error_msg = str(e)
+        print(f"YooKassa error: {error_msg}")
+        import traceback
+        traceback.print_exc()
+        # Сохраняем ошибку в платеже для отладки
+        payment.raw_notify = f"Error: {error_msg}"
+        db.commit()
+        return RedirectResponse(url=f"/advertiser/payments?error=yookassa&msg={error_msg[:50]}", status_code=303)
 
 
 @router.get("/advertiser/stats", response_class=HTMLResponse)

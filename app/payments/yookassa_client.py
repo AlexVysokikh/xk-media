@@ -21,9 +21,21 @@ def configure_yookassa():
     if not YOOKASSA_AVAILABLE:
         raise RuntimeError("YooKassa SDK not installed")
     
-    # Используем shop_id из настроек или дефолтный для теста
-    shop_id = getattr(settings, 'YOOKASSA_SHOP_ID', '1000001')
+    shop_id = settings.YOOKASSA_SHOP_ID
     secret_key = settings.YOOKASSA_SECRET_KEY
+    
+    if not secret_key:
+        raise RuntimeError("YOOKASSA_SECRET_KEY not configured")
+    
+    # Для live ключей shop_id извлекается из секретного ключа или должен быть указан явно
+    # Если shop_id не указан, попробуем извлечь из ключа (формат: live_XXXXX или test_XXXXX)
+    if not shop_id:
+        # Для live ключей shop_id обычно нужно получить из личного кабинета YooKassa
+        # Временно используем пустую строку - SDK может определить автоматически
+        # Но лучше указать явно в настройках
+        print("Warning: YOOKASSA_SHOP_ID not set. Please set it in .env file.")
+        # Попробуем использовать дефолтное значение, но это может не работать для live
+        shop_id = "1000001"  # Это значение нужно заменить на реальный shop_id из личного кабинета
     
     Configuration.configure(shop_id, secret_key)
 
@@ -106,6 +118,10 @@ def create_payment(
         # Создаем платеж
         payment = Payment.create(payment_data, idempotency_key)
         
+        # Проверяем наличие confirmation_url
+        if not payment.confirmation or not payment.confirmation.confirmation_url:
+            raise RuntimeError("YooKassa did not return confirmation_url. Payment may be in wrong state.")
+        
         return {
             "payment_id": payment.id,
             "confirmation_url": payment.confirmation.confirmation_url,
@@ -116,7 +132,16 @@ def create_payment(
             }
         }
     except Exception as e:
-        raise RuntimeError(f"YooKassa payment creation error: {str(e)}")
+        error_msg = str(e)
+        print(f"YooKassa payment creation error: {error_msg}")
+        print(f"Payment data: {payment_data}")
+        # Пробрасываем более детальную ошибку
+        if "shop_id" in error_msg.lower() or "shop" in error_msg.lower():
+            raise RuntimeError(f"YooKassa configuration error (check shop_id): {error_msg}")
+        elif "receipt" in error_msg.lower():
+            raise RuntimeError(f"YooKassa receipt error: {error_msg}")
+        else:
+            raise RuntimeError(f"YooKassa payment creation error: {error_msg}")
 
 
 def get_payment_status(payment_id: str) -> dict[str, Any]:

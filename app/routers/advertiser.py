@@ -57,8 +57,13 @@ def create_payment_for_advertiser(
         db.commit()
         db.refresh(payment)
     except Exception as e:
-        print(f"YooKassa error: {e}")
+        error_msg = str(e)
+        print(f"YooKassa error: {error_msg}")
+        import traceback
+        traceback.print_exc()
         # В случае ошибки платеж остается в статусе WAITING
+        payment.raw_notify = f"Error: {error_msg}"
+        db.commit()
 
     return PaymentOut(
         id=payment.id,
