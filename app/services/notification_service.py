@@ -263,3 +263,118 @@ class NotificationService:
         """.strip()
         
         await NotificationService.send_telegram(telegram_message)
+# Добавить в конец app/services/notification_service.py
+
+    @staticmethod
+    async def notify_payment_success(
+        user_email: str,
+        user_name: str,
+        amount: float,
+        payment_id: int,
+        purpose: str = "Пополнение баланса"
+    ):
+        """
+        Отправить уведомление об успешной оплате.
+        """
+        # Email уведомление пользователю
+        email_subject = f"Оплата успешно получена - {amount:.0f} ₽"
+        email_body = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            <h2 style="color: #e94560;">Оплата успешно получена</h2>
+            <p>Здравствуйте, {user_name}!</p>
+            <p>Ваш платеж успешно обработан.</p>
+            <div style="background: #f5f5f5; padding: 1rem; border-radius: 8px; margin: 1rem 0;">
+                <p><strong>Сумма:</strong> {amount:.0f} ₽</p>
+                <p><strong>Назначение:</strong> {purpose}</p>
+                <p><strong>ID платежа:</strong> #{payment_id}</p>
+                <p><strong>Дата:</strong> {datetime.now().strftime('%d.%m.%Y %H:%M:%S')}</p>
+            </div>
+            <p>Средства зачислены на ваш баланс. Теперь вы можете оформить подписку на размещение рекламы.</p>
+            <p><a href="https://xk-media.ru/advertiser/subscriptions" style="background: #e94560; color: white; padding: 0.75rem 1.5rem; text-decoration: none; border-radius: 8px; display: inline-block; margin-top: 1rem;">Оформить подписку</a></p>
+        </body>
+        </html>
+        """
+        
+        await NotificationService.send_email(user_email, email_subject, email_body)
+        
+        # Email уведомление админу
+        admin_email = settings.ADMIN_EMAIL or "admin@xk-media.ru"
+        admin_subject = f"Новая оплата: {amount:.0f} ₽ от {user_name}"
+        admin_body = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            <h2 style="color: #e94560;">Новая оплата получена</h2>
+            <p><strong>Пользователь:</strong> {user_name} ({user_email})</p>
+            <p><strong>Сумма:</strong> {amount:.0f} ₽</p>
+            <p><strong>Назначение:</strong> {purpose}</p>
+            <p><strong>ID платежа:</strong> #{payment_id}</p>
+            <p><strong>Дата:</strong> {datetime.now().strftime('%d.%m.%Y %H:%M:%S')}</p>
+        </body>
+        </html>
+        """
+        
+        await NotificationService.send_email(admin_email, admin_subject, admin_body)
+        
+        # Telegram уведомление
+        telegram_message = f"""
+<b>💳 Новая оплата получена</b>
+
+<b>Пользователь:</b> {user_name}
+<b>Email:</b> {user_email}
+<b>Сумма:</b> {amount:.0f} ₽
+<b>Назначение:</b> {purpose}
+<b>ID платежа:</b> #{payment_id}
+<b>Дата:</b> {datetime.now().strftime('%d.%m.%Y %H:%M:%S')}
+        """.strip()
+        
+        await NotificationService.send_telegram(telegram_message)
+    
+    @staticmethod
+    async def notify_subscription_created(
+        user_email: str,
+        user_name: str,
+        tv_name: str,
+        start_date: str,
+        end_date: str,
+        amount: float,
+        subscription_id: int
+    ):
+        """
+        Отправить уведомление о создании подписки.
+        """
+        # Email уведомление пользователю
+        email_subject = f"Подписка оформлена: {tv_name}"
+        email_body = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            <h2 style="color: #e94560;">Подписка успешно оформлена!</h2>
+            <p>Здравствуйте, {user_name}!</p>
+            <p>Ваша рекламная кампания активирована.</p>
+            <div style="background: #f5f5f5; padding: 1rem; border-radius: 8px; margin: 1rem 0;">
+                <p><strong>ТВ-экран:</strong> {tv_name}</p>
+                <p><strong>Период:</strong> {start_date} — {end_date}</p>
+                <p><strong>Сумма:</strong> {amount:.0f} ₽</p>
+                <p><strong>ID подписки:</strong> #{subscription_id}</p>
+            </div>
+            <p>Ваша реклама будет отображаться на выбранном экране в указанный период.</p>
+            <p><a href="https://xk-media.ru/advertiser/subscriptions" style="background: #e94560; color: white; padding: 0.75rem 1.5rem; text-decoration: none; border-radius: 8px; display: inline-block; margin-top: 1rem;">Мои подписки</a></p>
+        </body>
+        </html>
+        """
+        
+        await NotificationService.send_email(user_email, email_subject, email_body)
+        
+        # Telegram уведомление
+        telegram_message = f"""
+<b>✅ Подписка оформлена</b>
+
+<b>Пользователь:</b> {user_name}
+<b>ТВ-экран:</b> {tv_name}
+<b>Период:</b> {start_date} — {end_date}
+<b>Сумма:</b> {amount:.0f} ₽
+<b>ID подписки:</b> #{subscription_id}
+        """.strip()
+        
+        await NotificationService.send_telegram(telegram_message)
+
