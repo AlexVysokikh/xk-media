@@ -513,7 +513,7 @@ async def advertiser_upload_video(
 
 
 @router.get("/advertiser/payments", response_class=HTMLResponse)
-async def advertiser_payments_page(request: Request, warning: str = None, success: str = None, user: User = Depends(require_role_for_page(Role.ADVERTISER)), db: Session = Depends(get_db)):
+async def advertiser_payments_page(request: Request, warning: str = None, error: str = None, msg: str = None, success: str = None, user: User = Depends(require_role_for_page(Role.ADVERTISER)), db: Session = Depends(get_db)):
     """Advertiser payments page."""
     payments = db.query(Payment).filter(Payment.user_id == user.id).order_by(Payment.created_at.desc()).all()
     
@@ -538,7 +538,11 @@ async def advertiser_payments_page(request: Request, warning: str = None, succes
     }
     
     warning_message = None
-    if warning == "yookassa":
+    error_message = None
+    
+    if error == "yookassa":
+        error_message = f"⚠️ Ошибка YooKassa: {msg or 'Не удалось создать платеж. Проверьте настройки или попробуйте позже.'}"
+    elif warning == "yookassa":
         warning_message = "⚠️ YooKassa не настроен. Платёж создан, но оплата недоступна."
     elif warning == "paykeeper":
         warning_message = "⚠️ PayKeeper не настроен. Платёж создан, но оплата недоступна."
