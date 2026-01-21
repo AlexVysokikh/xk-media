@@ -92,6 +92,22 @@ def api_register(payload: RegisterRequest, db: Session = Depends(get_db)):
         last_name=payload.last_name,
     )
     
+    # Отправляем уведомление о новом пользователе
+    try:
+        from app.services.notification_service import NotificationService
+        import asyncio
+        asyncio.create_task(
+            NotificationService.notify_new_user(
+                email=user.email,
+                role=user.role,
+                first_name=user.first_name,
+                last_name=user.last_name,
+                company_name=user.company_name
+            )
+        )
+    except Exception as e:
+        print(f"Error sending new user notification: {e}")
+    
     return user
 
 
@@ -193,6 +209,23 @@ async def browser_register(
     user.offer_accepted_at = datetime.utcnow()
     user.offer_version = offer_version
     db.commit()
+    
+    # Отправляем уведомление о новом пользователе
+    try:
+        from app.services.notification_service import NotificationService
+        import asyncio
+        # Запускаем асинхронно, не блокируем ответ
+        asyncio.create_task(
+            NotificationService.notify_new_user(
+                email=user.email,
+                role=user.role,
+                first_name=user.first_name,
+                last_name=user.last_name,
+                company_name=user.company_name
+            )
+        )
+    except Exception as e:
+        print(f"Error sending new user notification: {e}")
     
     token = auth.create_token_for_user(user)
     

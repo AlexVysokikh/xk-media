@@ -41,6 +41,7 @@ class AuthService:
         self.db.add(user)
         self.db.commit()
         self.db.refresh(user)
+        
         return user
 
     def authenticate(self, email: str, password: str) -> User | None:

@@ -164,6 +164,22 @@ async def yandex_oauth_callback(
         user.offer_version = offer_version
         user.is_verified = True
         db.commit()
+        
+        # Отправляем уведомление о новом пользователе
+        try:
+            from app.services.notification_service import NotificationService
+            import asyncio
+            asyncio.create_task(
+                NotificationService.notify_new_user(
+                    email=user.email,
+                    role=user.role,
+                    first_name=user.first_name,
+                    last_name=user.last_name,
+                    company_name=user.company_name
+                )
+            )
+        except Exception as e:
+            print(f"Error sending new user notification: {e}")
     
     redirect = RedirectResponse(url="/", status_code=303)
     return set_cookie_and_redirect(redirect, user, user.role)

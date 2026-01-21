@@ -62,13 +62,18 @@ async def advertiser_request(
 ):
     """Обработка формы заявки рекламодателя с лендинга."""
     try:
-        # Здесь можно сохранить заявку в БД или отправить на email
-        # Пока просто возвращаем успех
-        # TODO: Добавить модель AdvertiserRequest для сохранения заявок
+        # Отправляем уведомления
+        from app.services.notification_service import NotificationService
         
-        # Логируем заявку (в продакшене можно отправить на email или сохранить в БД)
+        await NotificationService.notify_advertiser_request(
+            name=name,
+            email=email,
+            phone=phone,
+            company=company,
+            description=description
+        )
+        
         print(f"Новая заявка от рекламодателя: {name} ({email}), телефон: {phone}, компания: {company}")
-        print(f"Описание: {description}")
         
         return templates.TemplateResponse(
             "landing.html",
@@ -79,6 +84,8 @@ async def advertiser_request(
         )
     except Exception as e:
         print(f"Ошибка при обработке заявки: {e}")
+        import traceback
+        traceback.print_exc()
         return templates.TemplateResponse(
             "landing.html",
             {

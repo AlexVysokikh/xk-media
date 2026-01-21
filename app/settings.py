@@ -77,6 +77,22 @@ class Settings(BaseSettings):
     GOOGLE_CLIENT_ID: str = ""
     GOOGLE_CLIENT_SECRET: str = ""
     
+    # ─────────────────────────────────────────────────────────────
+    # Email (SMTP) для уведомлений
+    # ─────────────────────────────────────────────────────────────
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = 587
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_FROM_EMAIL: str = ""
+    SMTP_USE_TLS: bool = True
+    
+    # ─────────────────────────────────────────────────────────────
+    # Telegram для уведомлений
+    # ─────────────────────────────────────────────────────────────
+    TELEGRAM_BOT_TOKEN: str = ""
+    TELEGRAM_CHAT_ID: str = ""
+    
     class Config:
         env_file = ".env"
         extra = "ignore"
