@@ -275,7 +275,7 @@
                 </div>
                 <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
                     <span style="color: var(--text-muted);">Дней:</span>
-                    <span id="days_count">0</span>
+                    <span id="months_count">0</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; padding-top: 0.75rem; border-top: 1px solid var(--border);">
                     <span style="font-weight: 600;">К оплате:</span>
@@ -326,7 +326,7 @@
 </div>
 
 <script>
-const PRICE_PER_DAY = 500;
+const PRICE_PER_MONTH = 7000;
 const BALANCE = {{ balance|replace(',', '')|replace(' ', '')|default(0) }};
 
 function calculatePrice() {
@@ -339,10 +339,12 @@ function calculatePrice() {
         const days = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
         
         if (days > 0) {
-            const price = days * PRICE_PER_DAY;
+            // Рассчитываем количество месяцев (округляем вверх)
+            const months = Math.ceil(days / 30);
+            const price = months * PRICE_PER_MONTH;
             document.getElementById('price_display').textContent = price.toLocaleString('ru-RU') + ' ₽';
             document.getElementById('price_input').value = price;
-            document.getElementById('days_count').textContent = days;
+            document.getElementById('months_count').textContent = months;
             
             if (price > BALANCE) {
                 document.getElementById('balance_warning').style.display = 'block';
