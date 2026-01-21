@@ -27,15 +27,8 @@ def configure_yookassa():
     if not secret_key:
         raise RuntimeError("YOOKASSA_SECRET_KEY not configured")
     
-    # Для live ключей shop_id извлекается из секретного ключа или должен быть указан явно
-    # Если shop_id не указан, попробуем извлечь из ключа (формат: live_XXXXX или test_XXXXX)
     if not shop_id:
-        # Для live ключей shop_id обычно нужно получить из личного кабинета YooKassa
-        # Временно используем пустую строку - SDK может определить автоматически
-        # Но лучше указать явно в настройках
-        print("Warning: YOOKASSA_SHOP_ID not set. Please set it in .env file.")
-        # Попробуем использовать дефолтное значение, но это может не работать для live
-        shop_id = "1000001"  # Это значение нужно заменить на реальный shop_id из личного кабинета
+        raise RuntimeError("YOOKASSA_SHOP_ID not configured. Please set it in .env file.")
     
     Configuration.configure(shop_id, secret_key)
 
@@ -91,19 +84,11 @@ def create_payment(
         }
     }
     
-    # Добавляем данные клиента если есть
-    if client_email or client_phone:
-        receipt = {
-            "customer": {}
-        }
-        if client_email:
-            receipt["customer"]["email"] = client_email
-        if client_phone:
-            receipt["customer"]["phone"] = client_phone
-        
-        # Добавляем позицию в чек (обязательно для ЮКассы)
-        receipt["items"] = [{
-            "description": description,
+    # Добавляем данные клиента и чек (обязательно для YooKassa в РФ)
+    # Для live режима чек обязателен, если сумма > 0
+    receipt = {
+        "items": [{
+            "description": description[:128],  # Максимум 128 символов
             "quantity": "1",
             "amount": {
                 "value": amount_value,
@@ -111,8 +96,17 @@ def create_payment(
             },
             "vat_code": 1  # НДС не облагается
         }]
-        
-        payment_data["receipt"] = receipt
+    }
+    
+    # Добавляем данные клиента если есть
+    if client_email or client_phone:
+        receipt["customer"] = {}
+        if client_email:
+            receipt["customer"]["email"] = client_email
+        if client_phone:
+            receipt["customer"]["phone"] = client_phone
+    
+    payment_data["receipt"] = receipt
     
     try:
         # Создаем платеж

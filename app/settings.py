@@ -38,7 +38,7 @@ class Settings(BaseSettings):
     # ─────────────────────────────────────────────────────────────
     # YooKassa (замена PayKeeper)
     # ─────────────────────────────────────────────────────────────
-    YOOKASSA_SHOP_ID: str = ""  # ID магазина (получить в личном кабинете YooKassa)
+    YOOKASSA_SHOP_ID: str = "1253109"  # ID магазина xk-media
     YOOKASSA_SECRET_KEY: str = "live_dZfwwGWY8uocS8YHrJIbZhJdGGlxXxP5FVBswXgovzY"
     YOOKASSA_WEBHOOK_PATH: str = "/payments/yookassa/webhook"
     YOOKASSA_RETURN_URL: str = "https://xk-media.ru/advertiser/payments"
