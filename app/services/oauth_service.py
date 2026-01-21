@@ -26,8 +26,11 @@ class OAuthService:
             "client_id": settings.YANDEX_CLIENT_ID,
             "redirect_uri": redirect_uri,
             "response_type": "code",
-            "state": state
+            "state": state,
+            "force_confirm": "yes"  # Принудительно запрашивать подтверждение
         }
+        # Yandex требует scope для получения email, но он не передается в authorize
+        # Email запрашивается автоматически при правильной настройке приложения
         return f"https://oauth.yandex.ru/authorize?{urlencode(params)}"
     
     @staticmethod
