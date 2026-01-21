@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Python
 __pycache__/
 *.py[cod]
@@ -71,3 +72,14 @@ alembic/versions/*.pyc
 
 # Docker
 .dockerignore
+=======
+node_modules/
+.env
+.DS_Store
+*.log
+dist/
+build/
+coverage/
+.vscode/
+.idea/
+>>>>>>> 23e82bc183e740fb23fe5f82f5c702202c0f7b7e
