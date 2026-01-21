@@ -2,7 +2,7 @@
 Authentication routes - API (Bearer) and Browser (Cookie) authentication.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, Form, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Form, Request, Response, BackgroundTasks
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
@@ -70,7 +70,7 @@ def api_login(payload: LoginRequest, db: Session = Depends(get_db)):
 
 
 @router.post("/auth/register", response_model=UserResponse, tags=["Auth API"])
-def api_register(payload: RegisterRequest, db: Session = Depends(get_db)):
+async def api_register(payload: RegisterRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     """
     API Register - creates new user.
     """
@@ -92,21 +92,19 @@ def api_register(payload: RegisterRequest, db: Session = Depends(get_db)):
         last_name=payload.last_name,
     )
     
-    # Отправляем уведомление о новом пользователе
+    # Отправляем уведомление о новом пользователе (в фоне)
     try:
         from app.services.notification_service import NotificationService
-        import asyncio
-        asyncio.create_task(
-            NotificationService.notify_new_user(
-                email=user.email,
-                role=user.role,
-                first_name=user.first_name,
-                last_name=user.last_name,
-                company_name=user.company_name
-            )
+        background_tasks.add_task(
+            NotificationService.notify_new_user,
+            email=user.email,
+            role=user.role,
+            first_name=user.first_name,
+            last_name=user.last_name,
+            company_name=user.company_name
         )
     except Exception as e:
-        print(f"Error sending new user notification: {e}")
+        print(f"Error scheduling new user notification: {e}")
     
     return user
 
@@ -159,6 +157,7 @@ async def browser_login(
 @router.post("/register", tags=["Auth Browser"])
 async def browser_register(
     response: Response,
+    background_tasks: BackgroundTasks,
     role: str = Form(...),
     first_name: str = Form(...),
     last_name: str = Form(None),
@@ -210,22 +209,19 @@ async def browser_register(
     user.offer_version = offer_version
     db.commit()
     
-    # Отправляем уведомление о новом пользователе
+    # Отправляем уведомление о новом пользователе (в фоне)
     try:
         from app.services.notification_service import NotificationService
-        import asyncio
-        # Запускаем асинхронно, не блокируем ответ
-        asyncio.create_task(
-            NotificationService.notify_new_user(
-                email=user.email,
-                role=user.role,
-                first_name=user.first_name,
-                last_name=user.last_name,
-                company_name=user.company_name
-            )
+        background_tasks.add_task(
+            NotificationService.notify_new_user,
+            email=user.email,
+            role=user.role,
+            first_name=user.first_name,
+            last_name=user.last_name,
+            company_name=user.company_name
         )
     except Exception as e:
-        print(f"Error sending new user notification: {e}")
+        print(f"Error scheduling new user notification: {e}")
     
     token = auth.create_token_for_user(user)
     

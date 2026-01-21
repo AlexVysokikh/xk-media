@@ -74,6 +74,7 @@ async def yandex_oauth_callback(
     state: str = Query(None),
     error: str = Query(None),
     error_description: str = Query(None),
+    background_tasks: BackgroundTasks = None,
     db: Session = Depends(get_db),
 ):
     """Обработка callback от Yandex OAuth."""
@@ -165,21 +166,20 @@ async def yandex_oauth_callback(
         user.is_verified = True
         db.commit()
         
-        # Отправляем уведомление о новом пользователе
-        try:
-            from app.services.notification_service import NotificationService
-            import asyncio
-            asyncio.create_task(
-                NotificationService.notify_new_user(
+        # Отправляем уведомление о новом пользователе (в фоне)
+        if background_tasks:
+            try:
+                from app.services.notification_service import NotificationService
+                background_tasks.add_task(
+                    NotificationService.notify_new_user,
                     email=user.email,
                     role=user.role,
                     first_name=user.first_name,
                     last_name=user.last_name,
                     company_name=user.company_name
                 )
-            )
-        except Exception as e:
-            print(f"Error sending new user notification: {e}")
+            except Exception as e:
+                print(f"Error scheduling new user notification: {e}")
     
     redirect = RedirectResponse(url="/", status_code=303)
     return set_cookie_and_redirect(redirect, user, user.role)
