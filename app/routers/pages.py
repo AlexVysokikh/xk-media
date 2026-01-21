@@ -1916,10 +1916,16 @@ async def admin_settings(request: Request, success: str = None, user: User = Dep
     error_message = None
     if success == "saved":
         success_message = "✓ Настройки сохранены"
+    elif success == "password":
+        success_message = "✓ Пароль изменён"
     elif success == "oauth_saved":
         success_message = "✓ OAuth настройки сохранены. Перезапустите приложение для применения изменений."
     elif success == "oauth_save_failed":
         error_message = "✗ Ошибка сохранения OAuth настроек"
+    elif success == "wrong_password":
+        error_message = "✗ Неверный текущий пароль"
+    elif success == "password_mismatch":
+        error_message = "✗ Пароли не совпадают"
     
     return templates.TemplateResponse("admin_settings.html", {
         "request": request, "user": user, "offer": offer, "privacy": privacy, 
@@ -1992,6 +1998,31 @@ def update_env_file(env_vars: dict) -> bool:
     except Exception as e:
         print(f"Error updating .env file: {e}")
         return False
+
+
+@router.post("/admin/settings/password", response_class=HTMLResponse)
+async def admin_settings_password(
+    request: Request,
+    user: User = Depends(require_role_for_page(Role.ADMIN)),
+    db: Session = Depends(get_db),
+):
+    """Change admin password."""
+    form = await request.form()
+    
+    current = form.get("current_password", "")
+    new_pass = form.get("new_password", "")
+    confirm = form.get("confirm_password", "")
+    
+    if not verify_password(current, user.hashed_password):
+        return RedirectResponse(url="/admin/settings?success=wrong_password", status_code=303)
+    
+    if new_pass != confirm:
+        return RedirectResponse(url="/admin/settings?success=password_mismatch", status_code=303)
+    
+    user.hashed_password = get_password_hash(new_pass)
+    db.commit()
+    
+    return RedirectResponse(url="/admin/settings?success=password", status_code=303)
 
 
 @router.post("/admin/settings/oauth", response_class=HTMLResponse)
