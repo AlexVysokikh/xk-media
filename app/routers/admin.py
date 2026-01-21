@@ -27,15 +27,6 @@ async def check_oauth_config(
         "providers": {}
     }
     
-    # Google
-    config["providers"]["google"] = {
-        "configured": bool(settings.GOOGLE_CLIENT_ID and settings.GOOGLE_CLIENT_SECRET),
-        "client_id": settings.GOOGLE_CLIENT_ID[:20] + "..." if settings.GOOGLE_CLIENT_ID else None,
-        "redirect_uri": f"{base_url}/auth/oauth/google/callback",
-        "setup_url": "https://console.cloud.google.com/apis/credentials",
-        "instructions": "Добавьте redirect URI в Authorized redirect URIs"
-    }
-    
     # Yandex
     config["providers"]["yandex"] = {
         "configured": bool(settings.YANDEX_CLIENT_ID and settings.YANDEX_CLIENT_SECRET),

@@ -1,5 +1,5 @@
 """
-OAuth service для регистрации и входа через Google, Yandex, VK.
+OAuth service для регистрации и входа через Yandex, VK.
 """
 
 import secrets
@@ -12,83 +12,6 @@ from app.settings import settings
 
 class OAuthService:
     """Сервис для работы с OAuth провайдерами."""
-    
-    @staticmethod
-    def get_google_auth_url(state: str, role: str = "advertiser") -> str:
-        """Получить URL для авторизации через Google."""
-        if not settings.GOOGLE_CLIENT_ID:
-            raise ValueError("GOOGLE_CLIENT_ID not configured")
-        
-        # Убираем trailing slash из BASE_URL
-        base_url = settings.BASE_URL.rstrip('/')
-        # Используем полный URL для redirect_uri
-        redirect_uri = f"{base_url}/auth/oauth/google/callback"
-        
-        params = {
-            "client_id": settings.GOOGLE_CLIENT_ID,
-            "redirect_uri": redirect_uri,
-            "response_type": "code",
-            "scope": "openid email profile",
-            "state": state,
-            "access_type": "offline",
-            "prompt": "consent"
-        }
-        return f"https://accounts.google.com/o/oauth2/v2/auth?{urlencode(params)}"
-    
-    @staticmethod
-    async def get_google_token(code: str) -> Optional[Dict[str, Any]]:
-        """Обменять код на токен Google."""
-        if not settings.GOOGLE_CLIENT_ID or not settings.GOOGLE_CLIENT_SECRET:
-            print("Google OAuth credentials not configured")
-            return None
-        
-        base_url = settings.BASE_URL.rstrip('/')
-        redirect_uri = f"{base_url}/auth/oauth/google/callback"
-        
-        async with httpx.AsyncClient() as client:
-            try:
-                response = await client.post(
-                    "https://oauth2.googleapis.com/token",
-                    data={
-                        "client_id": settings.GOOGLE_CLIENT_ID,
-                        "client_secret": settings.GOOGLE_CLIENT_SECRET,
-                        "code": code,
-                        "grant_type": "authorization_code",
-                        "redirect_uri": redirect_uri
-                    },
-                    headers={"Content-Type": "application/x-www-form-urlencoded"},
-                    timeout=10.0
-                )
-                if response.status_code != 200:
-                    error_text = response.text
-                    print(f"Google token error {response.status_code}: {error_text}")
-                    print(f"Redirect URI used: {redirect_uri}")
-                    return None
-                return response.json()
-            except httpx.HTTPStatusError as e:
-                error_detail = e.response.text if e.response else str(e)
-                print(f"Google token HTTP error: {e.response.status_code} - {error_detail}")
-                print(f"Redirect URI used: {redirect_uri}")
-                return None
-            except Exception as e:
-                print(f"Google token error: {e}")
-                return None
-    
-    @staticmethod
-    async def get_google_user_info(access_token: str) -> Optional[Dict[str, Any]]:
-        """Получить информацию о пользователе Google."""
-        async with httpx.AsyncClient() as client:
-            try:
-                response = await client.get(
-                    "https://www.googleapis.com/oauth2/v2/userinfo",
-                    headers={"Authorization": f"Bearer {access_token}"},
-                    timeout=10.0
-                )
-                response.raise_for_status()
-                return response.json()
-            except Exception as e:
-                print(f"Google user info error: {e}")
-                return None
     
     @staticmethod
     def get_yandex_auth_url(state: str, role: str = "advertiser") -> str:

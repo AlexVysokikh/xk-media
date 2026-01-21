@@ -13,7 +13,7 @@ Backend для медиа-платформы с поддержкой трех т
 - Управление рекламными кампаниями
 - Управление площадками и экранами
 - Интеграция с YooKassa для платежей
-- OAuth регистрация через Google, Yandex, VK
+- OAuth регистрация через Yandex, VK
 - Docker и Docker Compose для развертывания
 - CI/CD через GitHub Actions
 
@@ -51,10 +51,8 @@ pip install -r requirements.txt
    YOOKASSA_SECRET_KEY=your_secret_key
    ```
 
-4. Настройте OAuth провайдеры (см. `OAUTH_SETUP.md`):
+4. Настройте OAuth провайдеры (см. `QUICK_OAUTH_SETUP.md`):
    ```
-   GOOGLE_CLIENT_ID=...
-   GOOGLE_CLIENT_SECRET=...
    YANDEX_CLIENT_ID=...
    YANDEX_CLIENT_SECRET=...
    VK_CLIENT_ID=...

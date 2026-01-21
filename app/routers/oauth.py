@@ -1,5 +1,5 @@
 """
-OAuth routes для регистрации и входа через Google, Yandex, VK.
+OAuth routes для регистрации и входа через Yandex, VK.
 """
 
 import secrets
@@ -42,106 +42,6 @@ def set_cookie_and_redirect(response: RedirectResponse, user: User, role: str):
         samesite="lax",
     )
     return response
-
-
-# ─────────────────────────────────────────────────────────────
-# Google OAuth
-# ─────────────────────────────────────────────────────────────
-
-@router.get("/google")
-async def google_oauth_start(role: str = Query("advertiser", description="Роль: advertiser или venue")):
-    """Начать OAuth авторизацию через Google."""
-    if not settings.GOOGLE_CLIENT_ID:
-        return RedirectResponse(url="/login?error=oauth_not_configured", status_code=303)
-    
-    if role not in [Role.ADVERTISER, Role.VENUE]:
-        role = Role.ADVERTISER
-    
-    try:
-        state = OAuthService.generate_state()
-        oauth_states[state] = {"role": role, "provider": "google"}
-        
-        auth_url = OAuthService.get_google_auth_url(state, role)
-        return RedirectResponse(url=auth_url)
-    except Exception as e:
-        print(f"Google OAuth start error: {e}")
-        return RedirectResponse(url="/login?error=oauth_config_error", status_code=303)
-
-
-@router.get("/google/callback")
-async def google_oauth_callback(
-    code: str = Query(...),
-    state: str = Query(...),
-    db: Session = Depends(get_db),
-):
-    """Обработка callback от Google OAuth."""
-    # Проверяем state
-    if state not in oauth_states:
-        return RedirectResponse(url="/login?error=oauth_invalid", status_code=303)
-    
-    state_data = oauth_states.pop(state)
-    role = state_data.get("role", Role.ADVERTISER)
-    
-    # Получаем токен
-    token_data = await OAuthService.get_google_token(code)
-    if not token_data or "access_token" not in token_data:
-        return RedirectResponse(url="/login?error=oauth_failed", status_code=303)
-    
-    # Получаем информацию о пользователе
-    user_info = await OAuthService.get_google_user_info(token_data["access_token"])
-    if not user_info or "email" not in user_info:
-        return RedirectResponse(url="/login?error=oauth_no_email", status_code=303)
-    
-    email = user_info["email"].lower().strip()
-    first_name = user_info.get("given_name") or user_info.get("name", "").split()[0] if user_info.get("name") else None
-    last_name = user_info.get("family_name") or (user_info.get("name", "").split()[1] if len(user_info.get("name", "").split()) > 1 else None)
-    provider_id = user_info.get("id") or user_info.get("sub")
-    
-    # Ищем существующего пользователя
-    auth = AuthService(db)
-    user = auth.get_user_by_email(email)
-    
-    # Или ищем по OAuth провайдеру
-    if not user:
-        user = db.query(User).filter(
-            User.oauth_provider == "google",
-            User.oauth_provider_id == str(provider_id)
-        ).first()
-    
-    if user:
-        # Обновляем OAuth данные
-        user.oauth_provider = "google"
-        user.oauth_provider_id = str(provider_id)
-        user.oauth_email = email
-        user.last_login = datetime.utcnow()
-        db.commit()
-    else:
-        # Создаем нового пользователя
-        # Генерируем случайный пароль (пользователь не будет его знать, но он нужен для модели)
-        random_password = secrets.token_urlsafe(32)
-        
-        # Получаем версию оферты
-        offer = db.query(SiteSettings).filter(SiteSettings.key == "offer", SiteSettings.is_active == True).first()
-        offer_version = offer.version if offer else "1.0"
-        
-        user = auth.create_user(
-            email=email,
-            password=random_password,  # Случайный пароль, вход только через OAuth
-            role=role,
-            first_name=first_name,
-            last_name=last_name,
-        )
-        user.oauth_provider = "google"
-        user.oauth_provider_id = str(provider_id)
-        user.oauth_email = email
-        user.offer_accepted_at = datetime.utcnow()
-        user.offer_version = offer_version
-        user.is_verified = True  # OAuth пользователи считаются верифицированными
-        db.commit()
-    
-    # Авторизуем пользователя
-    redirect = RedirectResponse(url="/", status_code=303)
-    return set_cookie_and_redirect(redirect, user, user.role)
 
 
 # ─────────────────────────────────────────────────────────────

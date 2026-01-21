@@ -97,22 +97,6 @@
                     </div>
                     
                     <div style="margin: 2rem 0; padding: 1rem; background: var(--bg-secondary); border-radius: 8px;">
-                        <h4 style="margin-top: 0;">🔵 Google OAuth</h4>
-                        <div class="form-group">
-                            <label for="google_client_id">Google Client ID</label>
-                            <input type="text" id="google_client_id" name="google_client_id" value="{{ settings.GOOGLE_CLIENT_ID or '' }}" placeholder="xxxxx.apps.googleusercontent.com">
-                        </div>
-                        <div class="form-group">
-                            <label for="google_client_secret">Google Client Secret</label>
-                            <input type="password" id="google_client_secret" name="google_client_secret" value="{{ settings.GOOGLE_CLIENT_SECRET or '' }}" placeholder="GOCSPX-xxxxx">
-                        </div>
-                        <div class="form-hint">
-                            <strong>Redirect URI:</strong> <code id="google-redirect">{{ settings.BASE_URL.rstrip('/') }}/oauth/google/callback</code><br>
-                            <a href="https://console.cloud.google.com/apis/credentials" target="_blank">Создать OAuth приложение →</a>
-                        </div>
-                    </div>
-                    
-                    <div style="margin: 2rem 0; padding: 1rem; background: var(--bg-secondary); border-radius: 8px;">
                         <h4 style="margin-top: 0;">🟡 Yandex OAuth</h4>
                         <div class="form-group">
                             <label for="yandex_client_id">Yandex Client ID</label>
@@ -184,7 +168,6 @@
 document.getElementById('base_url')?.addEventListener('input', function() {
     const baseUrl = this.value.trim().replace(/\/$/, '');
     if (baseUrl) {
-        document.getElementById('google-redirect').textContent = baseUrl + '/oauth/google/callback';
         document.getElementById('yandex-redirect').textContent = baseUrl + '/oauth/yandex/callback';
         document.getElementById('vk-redirect').textContent = baseUrl + '/oauth/vk/callback';
     }

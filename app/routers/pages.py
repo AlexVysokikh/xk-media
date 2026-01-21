@@ -1958,12 +1958,6 @@ async def admin_settings_oauth(request: Request, user: User = Depends(require_ro
     
     env_updates = {}
     
-    # Google OAuth
-    if form.get("google_client_id"):
-        env_updates["GOOGLE_CLIENT_ID"] = form.get("google_client_id")
-    if form.get("google_client_secret"):
-        env_updates["GOOGLE_CLIENT_SECRET"] = form.get("google_client_secret")
-    
     # Yandex OAuth
     if form.get("yandex_client_id"):
         env_updates["YANDEX_CLIENT_ID"] = form.get("yandex_client_id")
