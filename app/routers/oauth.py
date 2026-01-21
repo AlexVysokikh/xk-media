@@ -4,7 +4,7 @@ OAuth routes для регистрации и входа через Yandex.
 
 import secrets
 from datetime import datetime
-from fastapi import APIRouter, Depends, Request, HTTPException, Query
+from fastapi import APIRouter, Depends, Request, HTTPException, Query, BackgroundTasks
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
