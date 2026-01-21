@@ -263,8 +263,7 @@ class NotificationService:
         """.strip()
         
         await NotificationService.send_telegram(telegram_message)
-# Добавить в конец app/services/notification_service.py
-
+    
     @staticmethod
     async def notify_payment_success(
         user_email: str,

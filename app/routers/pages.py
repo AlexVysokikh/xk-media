@@ -13,7 +13,7 @@ from pathlib import Path
 from datetime import datetime, date
 from decimal import Decimal
 
-from fastapi import APIRouter, Request, Depends, Form, UploadFile, File
+from fastapi import APIRouter, Request, Depends, Form, UploadFile, File, BackgroundTasks
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session, joinedload
@@ -740,23 +740,21 @@ async def advertiser_subscriptions_create(request: Request, background_tasks: Ba
     db.commit()
     db.refresh(subscription)
     
-    # Отправляем уведомление о создании подписки
+    # Отправляем уведомление о создании подписки (в фоне)
     try:
         from app.services.notification_service import NotificationService
-        import asyncio
-        asyncio.create_task(
-            NotificationService.notify_subscription_created(
-                user_email=user.email,
-                user_name=user.company_name or f"{user.first_name or ''} {user.last_name or ''}".strip() or user.email,
-                tv_name=tv.name,
-                start_date=start_dt.strftime("%d.%m.%Y"),
-                end_date=end_dt.strftime("%d.%m.%Y"),
-                amount=float(price),
-                subscription_id=subscription.id
-            )
+        background_tasks.add_task(
+            NotificationService.notify_subscription_created,
+            user_email=user.email,
+            user_name=user.company_name or f"{user.first_name or ''} {user.last_name or ''}".strip() or user.email,
+            tv_name=tv.name,
+            start_date=start_dt.strftime("%d.%m.%Y"),
+            end_date=end_dt.strftime("%d.%m.%Y"),
+            amount=float(price),
+            subscription_id=subscription.id
         )
     except Exception as e:
-        print(f"Error sending subscription notification: {e}")
+        print(f"Error scheduling subscription notification: {e}")
     
     return RedirectResponse(url="/advertiser/subscriptions?success=created", status_code=303)
 
