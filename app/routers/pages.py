@@ -738,6 +738,26 @@ async def advertiser_subscriptions_create(request: Request, user: User = Depends
     user.balance = Decimal(str(current_balance - price))
     
     db.commit()
+    db.refresh(subscription)
+    
+    # Отправляем уведомление о создании подписки
+    try:
+        from app.services.notification_service import NotificationService
+        import asyncio
+        asyncio.create_task(
+            NotificationService.notify_subscription_created(
+                user_email=user.email,
+                user_name=user.company_name or f"{user.first_name or ''} {user.last_name or ''}".strip() or user.email,
+                tv_name=tv.name,
+                start_date=start_dt.strftime("%d.%m.%Y"),
+                end_date=end_dt.strftime("%d.%m.%Y"),
+                amount=float(price),
+                subscription_id=subscription.id
+            )
+        )
+    except Exception as e:
+        print(f"Error sending subscription notification: {e}")
+    
     return RedirectResponse(url="/advertiser/subscriptions?success=created", status_code=303)
 
 

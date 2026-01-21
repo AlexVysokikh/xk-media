@@ -7,7 +7,7 @@ import json
 from datetime import datetime, timezone
 from decimal import Decimal
 
-from fastapi import APIRouter, Depends, Request, HTTPException
+from fastapi import APIRouter, Depends, Request, HTTPException, BackgroundTasks
 from fastapi.responses import PlainTextResponse, JSONResponse
 from sqlalchemy.orm import Session
 
@@ -23,7 +23,7 @@ router = APIRouter(prefix="/payments", tags=["Payments"])
 # ─────────────────────────────────────────────────────────────
 
 @router.post("/yookassa/webhook", response_class=JSONResponse)
-async def yookassa_webhook(request: Request, db: Session = Depends(get_db)):
+async def yookassa_webhook(request: Request, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     """
     YooKassa webhook endpoint для уведомлений о платежах.
     
@@ -75,6 +75,20 @@ async def yookassa_webhook(request: Request, db: Session = Depends(get_db)):
             current_balance = Decimal(str(user.balance or 0))
             payment_amount = Decimal(str(payment.amount))
             user.balance = current_balance + payment_amount
+            
+            # Отправляем уведомление об оплате (в фоне)
+            try:
+                from app.services.notification_service import NotificationService
+                background_tasks.add_task(
+                    NotificationService.notify_payment_success,
+                    user_email=user.email,
+                    user_name=user.company_name or f"{user.first_name or ''} {user.last_name or ''}".strip() or user.email,
+                    amount=float(payment_amount),
+                    payment_id=payment.id,
+                    purpose=payment.description or "Пополнение баланса"
+                )
+            except Exception as e:
+                print(f"Error scheduling payment notification: {e}")
         
         db.commit()
     
