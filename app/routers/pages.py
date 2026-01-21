@@ -553,7 +553,7 @@ async def advertiser_payments_page(request: Request, warning: str = None, error:
     
     return templates.TemplateResponse("advertiser_payments.html", {
         "request": request, "user": user, "payments": payments, "stats": stats,
-        "balance": f"{float(user.balance or 0):.0f}", "warning": warning_message, "success": success_message
+        "balance": f"{float(user.balance or 0):.0f}", "warning": warning_message, "error": error_message, "success": success_message
     })
 
 
