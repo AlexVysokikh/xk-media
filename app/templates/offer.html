@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}{{ offer.title if offer else "Оферта" }} — XK Media{% endblock %}
+
+{% block head %}
+<style>
+    .offer-container {
+        max-width: 900px;
+        margin: 2rem auto;
+    }
+
+    .offer-card {
+        padding: 2.5rem;
+    }
+
+    .offer-header {
+        text-align: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .offer-header h1 {
+        font-size: 1.75rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .offer-version {
+        color: var(--text-muted);
+        font-size: 0.9rem;
+    }
+
+    .offer-content {
+        line-height: 1.8;
+        font-size: 1rem;
+    }
+
+    .offer-content h2 {
+        font-size: 1.25rem;
+        margin-top: 2rem;
+        margin-bottom: 1rem;
+    }
+
+    .offer-content h3 {
+        font-size: 1.1rem;
+        margin-top: 1.5rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .offer-content p {
+        margin-bottom: 1rem;
+    }
+
+    .offer-content ul, .offer-content ol {
+        margin-bottom: 1rem;
+        padding-left: 1.5rem;
+    }
+
+    .offer-content li {
+        margin-bottom: 0.5rem;
+    }
+
+    .offer-footer {
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--border);
+        text-align: center;
+    }
+
+    .empty-offer {
+        text-align: center;
+        padding: 3rem;
+        color: var(--text-muted);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="offer-container">
+    <div class="card offer-card">
+        {% if offer and offer.content %}
+        <div class="offer-header">
+            <h1>📜 {{ offer.title or "Оферта" }}</h1>
+            {% if offer.version %}
+            <p class="offer-version">Версия {{ offer.version }} • Обновлено: {{ offer.updated_at.strftime("%d.%m.%Y") if offer.updated_at else "—" }}</p>
+            {% endif %}
+        </div>
+
+        <div class="offer-content">
+            {{ offer.content | safe }}
+        </div>
+
+        <div class="offer-footer">
+            <a href="/register" class="btn btn-primary">Зарегистрироваться</a>
+            <a href="/" class="btn btn-outline">На главную</a>
+        </div>
+        {% else %}
+        <div class="empty-offer">
+            <h2>📜 Оферта</h2>
+            <p>Текст оферты пока не опубликован.</p>
+            <a href="/" class="btn btn-outline">На главную</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

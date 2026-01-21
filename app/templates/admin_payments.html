@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block title %}Платежи — Админ{% endblock %}
+
+{% block logo %}
+<a href="/admin" class="logo">
+    <span class="logo-icon">📺</span>
+    XK Media
+</a>
+{% endblock %}
+
+{% block nav %}
+<a href="/admin">Дашборд</a>
+<a href="/admin/users">Пользователи</a>
+<a href="/admin/tvs">Экраны</a>
+<a href="/admin/payments" class="active">Платежи</a>
+<a href="/admin/payouts">Выплаты</a>
+<a href="/admin/settings">Настройки</a>
+<a href="/logout" class="btn btn-secondary btn-sm">Выйти</a>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">💳 Платежи</h1>
+    <p class="page-subtitle">История платежей рекламодателей</p>
+</div>
+
+<!-- Статистика -->
+<div class="grid grid-3" style="margin-bottom: 1.5rem;">
+    <div class="card stat-card">
+        <div class="stat-value">{{ stats.total_revenue }} ₽</div>
+        <div class="stat-label">Общий доход</div>
+    </div>
+    <div class="card stat-card">
+        <div class="stat-value">{{ stats.month_revenue }} ₽</div>
+        <div class="stat-label">За текущий месяц</div>
+    </div>
+    <div class="card stat-card">
+        <div class="stat-value">{{ stats.pending_count }}</div>
+        <div class="stat-label">Ожидают оплаты</div>
+    </div>
+</div>
+
+<!-- Фильтры -->
+<div class="card" style="margin-bottom: 1.5rem;">
+    <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
+        <a href="/admin/payments" class="btn {% if not status_filter %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">Все</a>
+        <a href="/admin/payments?status=succeeded" class="btn {% if status_filter == 'succeeded' %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">✓ Оплаченные</a>
+        <a href="/admin/payments?status=pending" class="btn {% if status_filter == 'pending' %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">⏳ Ожидание</a>
+        <a href="/admin/payments?status=failed" class="btn {% if status_filter == 'failed' %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">✗ Ошибки</a>
+        <div style="flex: 1;"></div>
+        <span style="color: var(--text-muted);">Показано: {{ payments|length }}</span>
+    </div>
+</div>
+
+<!-- Таблица платежей -->
+<div class="card">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Дата</th>
+                <th>Пользователь</th>
+                <th>Сумма</th>
+                <th>Тип</th>
+                <th>Описание</th>
+                <th>Статус</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in payments %}
+            <tr>
+                <td>#{{ p.id }}</td>
+                <td>
+                    <div>{{ p.created_at.strftime('%d.%m.%Y') }}</div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">{{ p.created_at.strftime('%H:%M') }}</div>
+                </td>
+                <td>
+                    {% if p.user %}
+                    <a href="/admin/user/{{ p.user.id }}">
+                        {{ p.user.company_name or p.user.first_name or p.user.email }}
+                    </a>
+                    {% else %}
+                    <span style="color: var(--text-muted);">ID: {{ p.user_id }}</span>
+                    {% endif %}
+                </td>
+                <td style="font-weight: 700; font-size: 1.125rem;">
+                    {{ "%.0f"|format(p.amount) }} ₽
+                </td>
+                <td>
+                    {% if p.payment_type == 'subscription' %}
+                    <span class="badge badge-info">Подписка</span>
+                    {% else %}
+                    <span class="badge badge-warning">Баланс</span>
+                    {% endif %}
+                </td>
+                <td style="max-width: 200px; font-size: 0.875rem;">
+                    {{ p.description or '—' }}
+                </td>
+                <td>
+                    {% if p.status == 'succeeded' %}
+                    <span class="badge badge-success">Оплачен</span>
+                    {% if p.paid_at %}
+                    <div style="font-size: 0.7rem; color: var(--text-muted);">{{ p.paid_at.strftime('%d.%m %H:%M') }}</div>
+                    {% endif %}
+                    {% elif p.status == 'pending' %}
+                    <span class="badge badge-warning">Создан</span>
+                    {% elif p.status == 'waiting' %}
+                    <span class="badge badge-warning">Ожидание</span>
+                    {% elif p.status == 'canceled' %}
+                    <span class="badge badge-danger">Отменён</span>
+                    {% else %}
+                    <span class="badge badge-danger">{{ p.status }}</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if p.status == 'pending' or p.status == 'waiting' %}
+                    <a href="/admin/payment/{{ p.id }}/confirm" class="btn btn-primary btn-sm" 
+                       onclick="return confirm('Подтвердить оплату?')">✓</a>
+                    <a href="/admin/payment/{{ p.id }}/cancel" class="btn btn-secondary btn-sm"
+                       onclick="return confirm('Отменить платёж?')">✗</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+            {% if not payments %}
+            <tr>
+                <td colspan="8" style="text-align: center; padding: 3rem; color: var(--text-muted);">
+                    Платежей не найдено
+                </td>
+            </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

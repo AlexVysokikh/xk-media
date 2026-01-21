@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+
+{% block title %}Рекламодатели — {{ tv.name }}{% endblock %}
+
+{% block logo %}
+<a href="/admin" class="logo">
+    <span class="logo-icon">📺</span>
+    XK Media
+</a>
+{% endblock %}
+
+{% block nav %}
+<a href="/admin">Дашборд</a>
+<a href="/admin/users">Пользователи</a>
+<a href="/admin/tvs" class="active">Экраны</a>
+<a href="/admin/payments">Платежи</a>
+<a href="/admin/payouts">Выплаты</a>
+<a href="/admin/settings">Настройки</a>
+<a href="/logout" class="btn btn-secondary btn-sm">Выйти</a>
+{% endblock %}
+
+{% block content %}
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start;">
+    <div>
+        <a href="/admin/tv/{{ tv.code }}" style="color: var(--text-muted); font-size: 0.875rem;">← Назад к ТВ</a>
+        <h1 class="page-title" style="margin-top: 0.5rem;">📺 {{ tv.name }} — Рекламодатели</h1>
+        <p class="page-subtitle">
+            Код: <code style="background: var(--secondary); padding: 0.25rem 0.5rem; border-radius: 4px;">{{ tv.code }}</code>
+            {% if tv.venue_name %} · {{ tv.venue_name }}{% endif %}
+            {% if tv.address %} · {{ tv.address }}{% endif %}
+        </p>
+    </div>
+    <a href="/tv/{{ tv.code }}" target="_blank" class="btn btn-secondary">👁 Публичная страница</a>
+</div>
+
+<!-- Статистика ТВ -->
+<div class="grid grid-3" style="margin-bottom: 1.5rem;">
+    <div class="card stat-card">
+        <div class="stat-value">{{ links|length }}</div>
+        <div class="stat-label">Рекламодателей</div>
+    </div>
+    <div class="card stat-card">
+        <div class="stat-value">{{ total_impressions }}</div>
+        <div class="stat-label">Показов всего</div>
+    </div>
+    <div class="card stat-card">
+        <div class="stat-value">{{ total_clicks }}</div>
+        <div class="stat-label">Кликов по ссылкам</div>
+    </div>
+</div>
+
+<!-- Добавить рекламодателя -->
+<div class="card" style="margin-bottom: 1.5rem;">
+    <div class="card-header">
+        <h3 class="card-title">➕ Добавить рекламодателя на этот ТВ</h3>
+    </div>
+    <form method="POST" action="/admin/tv/{{ tv.code }}/advertisers/add">
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+            <div class="form-group" style="margin: 0; min-width: 200px; flex: 1;">
+                <label class="form-label">Рекламодатель *</label>
+                <select name="advertiser_id" class="form-input" required>
+                    <option value="">Выберите рекламодателя...</option>
+                    {% for a in all_advertisers %}
+                    <option value="{{ a.id }}">
+                        {{ a.company_name or a.first_name or a.email }}
+                        {% if a.website %} ({{ a.website }}){% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group" style="margin: 0; min-width: 150px; flex: 1;">
+                <label class="form-label">Заголовок *</label>
+                <input type="text" name="title" class="form-input" required placeholder="Скидка 20%">
+            </div>
+            <div class="form-group" style="margin: 0; min-width: 250px; flex: 2;">
+                <label class="form-label">URL ссылки *</label>
+                <input type="url" name="url" class="form-input" required placeholder="https://example.com/promo">
+            </div>
+        </div>
+        <div style="display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 1rem;">
+            <div class="form-group" style="margin: 0; flex: 2; min-width: 200px;">
+                <label class="form-label">Описание</label>
+                <input type="text" name="description" class="form-input" placeholder="Краткое описание предложения">
+            </div>
+            <div class="form-group" style="margin: 0; flex: 1; min-width: 200px;">
+                <label class="form-label">URL картинки</label>
+                <input type="url" name="image_url" class="form-input" placeholder="https://example.com/banner.jpg">
+            </div>
+            <button type="submit" class="btn btn-primary" style="align-self: flex-end;">+ Добавить</button>
+        </div>
+    </form>
+</div>
+
+<!-- Список рекламодателей -->
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">📋 Рекламодатели на этом ТВ ({{ links|length }})</h3>
+    </div>
+    
+    {% if links %}
+    <div style="display: flex; flex-direction: column; gap: 1rem;">
+        {% for link in links %}
+        <div style="border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; background: var(--secondary);">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;">
+                <div style="flex: 1;">
+                    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+                        <span style="background: var(--accent); color: white; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.75rem; font-weight: 600;">
+                            #{{ link.position + 1 }}
+                        </span>
+                        <h4 style="margin: 0; font-size: 1.125rem;">{{ link.title }}</h4>
+                        {% if link.is_active %}
+                        <span class="badge badge-success">Активен</span>
+                        {% else %}
+                        <span class="badge badge-danger">Неактивен</span>
+                        {% endif %}
+                    </div>
+                    
+                    <div style="display: flex; flex-wrap: wrap; gap: 1.5rem; margin-bottom: 0.75rem;">
+                        <div>
+                            <span style="color: var(--text-muted); font-size: 0.75rem;">Рекламодатель:</span>
+                            <div>
+                                <a href="/admin/user/{{ link.advertiser_id }}">{{ link.advertiser_name or 'Unknown' }}</a>
+                                {% if link.advertiser and link.advertiser.website %}
+                                <a href="{{ link.advertiser.website }}" target="_blank" style="margin-left: 0.5rem; font-size: 0.75rem;">🌐 сайт</a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div>
+                            <span style="color: var(--text-muted); font-size: 0.75rem;">Ссылка:</span>
+                            <div><a href="{{ link.url }}" target="_blank" style="word-break: break-all;">{{ link.url[:60] }}{% if link.url|length > 60 %}...{% endif %}</a></div>
+                        </div>
+                    </div>
+                    
+                    {% if link.description %}
+                    <div style="color: var(--text-muted); font-size: 0.875rem; margin-bottom: 0.75rem;">
+                        {{ link.description }}
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Статистика -->
+                    <div style="display: flex; gap: 2rem; padding-top: 0.75rem; border-top: 1px solid var(--border);">
+                        <div>
+                            <span style="font-size: 1.5rem; font-weight: 700; color: var(--accent);">{{ link.impressions or 0 }}</span>
+                            <span style="color: var(--text-muted); font-size: 0.75rem; margin-left: 0.25rem;">показов</span>
+                        </div>
+                        <div>
+                            <span style="font-size: 1.5rem; font-weight: 700; color: var(--success);">{{ link.clicks or 0 }}</span>
+                            <span style="color: var(--text-muted); font-size: 0.75rem; margin-left: 0.25rem;">кликов</span>
+                        </div>
+                        <div>
+                            <span style="font-size: 1.5rem; font-weight: 700;">
+                                {% if link.impressions and link.impressions > 0 %}
+                                {{ "%.1f"|format(link.clicks / link.impressions * 100) }}%
+                                {% else %}
+                                0%
+                                {% endif %}
+                            </span>
+                            <span style="color: var(--text-muted); font-size: 0.75rem; margin-left: 0.25rem;">CTR</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Действия -->
+                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                    <a href="/admin/tv/{{ tv.code }}/advertisers/{{ link.id }}/edit" class="btn btn-secondary btn-sm">✏️ Редактировать</a>
+                    {% if link.is_active %}
+                    <a href="/admin/tv/{{ tv.code }}/advertisers/{{ link.id }}/toggle" class="btn btn-secondary btn-sm">⏸️ Отключить</a>
+                    {% else %}
+                    <a href="/admin/tv/{{ tv.code }}/advertisers/{{ link.id }}/toggle" class="btn btn-primary btn-sm">▶️ Включить</a>
+                    {% endif %}
+                    <a href="/admin/tv/{{ tv.code }}/advertisers/{{ link.id }}/delete" class="btn btn-secondary btn-sm" style="color: var(--accent);"
+                       onclick="return confirm('Удалить этого рекламодателя с ТВ?')">🗑️ Удалить</a>
+                </div>
+            </div>
+            
+            {% if link.image_url %}
+            <div style="margin-top: 1rem;">
+                <img src="{{ link.image_url }}" alt="{{ link.title }}" style="max-width: 200px; max-height: 100px; border-radius: 8px; object-fit: cover;">
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div style="text-align: center; padding: 3rem; color: var(--text-muted);">
+        <p style="font-size: 1.25rem; margin-bottom: 1rem;">📭 Рекламодателей пока нет</p>
+        <p>Добавьте первого рекламодателя с помощью формы выше</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

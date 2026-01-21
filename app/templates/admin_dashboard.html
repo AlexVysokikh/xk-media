@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}Админ-панель — XK Media{% endblock %}
+
+{% block logo %}
+<a href="/admin" class="logo">
+    <span class="logo-icon">📺</span>
+    XK Media
+</a>
+{% endblock %}
+
+{% block nav %}
+<a href="/admin" class="active">Дашборд</a>
+<a href="/admin/users">Пользователи</a>
+<a href="/admin/tvs">Экраны</a>
+<a href="/admin/payments">Платежи</a>
+<a href="/admin/payouts">Выплаты</a>
+<a href="/admin/settings">Настройки</a>
+<a href="/logout" class="btn btn-secondary btn-sm">Выйти</a>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">🎛️ Админ-панель</h1>
+    <p class="page-subtitle">Добро пожаловать, {{ user.first_name or user.email }}!</p>
+</div>
+
+<!-- Stats Grid -->
+<div class="grid grid-3" style="margin-bottom: 2rem;">
+    <div class="card stat-card">
+        <div class="stat-value">{{ stats.total_users }}</div>
+        <div class="stat-label">Пользователей</div>
+        <div style="margin-top: 0.5rem; font-size: 0.75rem; color: var(--text-muted);">
+            {{ stats.advertisers }} рекл. / {{ stats.venues }} площ.
+        </div>
+    </div>
+    <div class="card stat-card">
+        <div class="stat-value">{{ stats.total_tvs }}</div>
+        <div class="stat-label">ТВ-экранов</div>
+    </div>
+    <div class="card stat-card">
+        <div class="stat-value">{{ stats.total_revenue }} ₽</div>
+        <div class="stat-label">Общий доход</div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="grid grid-2" style="margin-bottom: 2rem;">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">⚡ Быстрые действия</h3>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+            <a href="/admin/users?role=advertiser" class="btn btn-secondary">👤 Рекламодатели</a>
+            <a href="/admin/users?role=venue" class="btn btn-secondary">🏢 Площадки</a>
+            <a href="/admin/tvs" class="btn btn-secondary">📺 Управление ТВ</a>
+            <a href="/admin/payments" class="btn btn-secondary">💳 Платежи</a>
+            <a href="/admin/payouts" class="btn btn-secondary">💸 Выплаты</a>
+            <a href="/admin/settings" class="btn btn-secondary">⚙️ Настройки (Оферта)</a>
+        </div>
+    </div>
+    
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">📊 Последние платежи</h3>
+        </div>
+        {% if payments %}
+        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+            {% for p in payments %}
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid var(--border);">
+                <div>
+                    <div style="font-weight: 500;">{{ "%.0f"|format(p.amount) }} ₽</div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">
+                        {{ p.created_at.strftime('%d.%m.%Y') }}
+                    </div>
+                </div>
+                <div>
+                    {% if p.status == 'succeeded' %}
+                    <span class="badge badge-success">✓</span>
+                    {% elif p.status == 'pending' or p.status == 'waiting' %}
+                    <span class="badge badge-warning">⏳</span>
+                    {% else %}
+                    <span class="badge badge-danger">✗</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <a href="/admin/payments" style="display: block; text-align: center; margin-top: 1rem; font-size: 0.875rem;">
+            Все платежи →
+        </a>
+        {% else %}
+        <p style="color: var(--text-muted); text-align: center; padding: 2rem 0;">
+            Платежей пока нет
+        </p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

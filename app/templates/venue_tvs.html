@@ -1,0 +1,284 @@
+{% extends "base.html" %}
+
+{% block title %}Мои ТВ-экраны — XK Media{% endblock %}
+
+{% block logo %}
+<a href="/venue" class="logo">
+    <span class="logo-icon">📺</span>
+    XK Media
+</a>
+{% endblock %}
+
+{% block nav %}
+<a href="/venue">Обзор</a>
+<a href="/venue/tvs" class="active">Мои ТВ</a>
+<a href="/venue/earnings">Доходы</a>
+<a href="/venue/profile">Профиль</a>
+<a href="/logout" class="btn btn-secondary btn-sm">Выйти</a>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <div>
+        <h1>📺 Мои ТВ-экраны</h1>
+        <p class="subtitle">Управление экранами в ваших заведениях</p>
+    </div>
+    <a href="/venue/tv/add" class="btn btn-primary">+ Добавить ТВ</a>
+</div>
+
+<nav class="tabs">
+    <a href="/venue" class="tab">Обзор</a>
+    <a href="/venue/tvs" class="tab active">Мои ТВ</a>
+    <a href="/venue/advertisers" class="tab">Рекламодатели</a>
+    <a href="/venue/earnings" class="tab">Доходы</a>
+    <a href="/venue/documents" class="tab">Документы</a>
+    <a href="/venue/profile" class="tab">Профиль</a>
+</nav>
+
+{% if success %}
+<div class="alert alert-success">{{ success }}</div>
+{% endif %}
+
+{% if error %}
+<div class="alert alert-error">{{ error }}</div>
+{% endif %}
+
+{% if tvs %}
+<div class="tv-grid">
+    {% for tv in tvs %}
+    <div class="tv-card {{ 'tv-pending' if not tv.is_approved else '' }}">
+        <div class="tv-card-header">
+            <div class="tv-status">
+                {% if tv.is_approved and tv.is_active %}
+                <span class="badge badge-success">Активен</span>
+                {% elif not tv.is_approved %}
+                <span class="badge badge-warning">На модерации</span>
+                {% else %}
+                <span class="badge badge-secondary">Неактивен</span>
+                {% endif %}
+            </div>
+            {% if tv.photo_url %}
+            <img src="{{ tv.photo_url }}" alt="{{ tv.name }}" class="tv-photo">
+            {% else %}
+            <div class="tv-photo-placeholder">📺</div>
+            {% endif %}
+        </div>
+        
+        <div class="tv-card-body">
+            <h3 class="tv-name">{{ tv.name }}</h3>
+            <p class="tv-venue">{{ tv.venue_name or "—" }}</p>
+            
+            <div class="tv-meta">
+                <div class="tv-meta-item">
+                    <span class="tv-meta-icon">📍</span>
+                    <span>{{ tv.city or "Не указан" }}</span>
+                </div>
+                <div class="tv-meta-item">
+                    <span class="tv-meta-icon">📂</span>
+                    <span>{{ categories.get(tv.category, "Другое") }}</span>
+                </div>
+            </div>
+            
+            <div class="tv-stats">
+                <div class="tv-stat">
+                    <div class="tv-stat-value">{{ tv.links_count }}</div>
+                    <div class="tv-stat-label">Реклам</div>
+                </div>
+                <div class="tv-stat">
+                    <div class="tv-stat-value">{{ tv.active_subscriptions }}</div>
+                    <div class="tv-stat-label">Подписок</div>
+                </div>
+                <div class="tv-stat">
+                    <div class="tv-stat-value">{{ "{:,}".format(tv.total_impressions).replace(",", " ") if tv.total_impressions else 0 }}</div>
+                    <div class="tv-stat-label">Показов</div>
+                </div>
+            </div>
+            
+            <div class="tv-tariff">
+                <span class="tv-tariff-label">Ваша доля:</span>
+                <span class="tv-tariff-value">{{ tv.revenue_share | int }}%</span>
+            </div>
+        </div>
+        
+        <div class="tv-card-footer">
+            <a href="/venue/tv/{{ tv.id }}" class="btn btn-sm btn-outline">Подробнее</a>
+            <a href="/tv/{{ tv.code }}" class="btn btn-sm" target="_blank">QR-страница ↗</a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state-large">
+    <div class="empty-icon">📺</div>
+    <h2>У вас пока нет ТВ-экранов</h2>
+    <p>Добавьте свой первый ТВ-экран, чтобы начать зарабатывать на рекламе</p>
+    <a href="/venue/tv/add" class="btn btn-primary btn-lg">+ Добавить ТВ</a>
+</div>
+{% endif %}
+
+<style>
+.tv-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.5rem;
+}
+
+.tv-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    transition: all 0.2s;
+}
+
+.tv-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+}
+
+.tv-pending {
+    opacity: 0.85;
+}
+
+.tv-card-header {
+    position: relative;
+    height: 140px;
+    background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-card) 100%);
+}
+
+.tv-status {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    z-index: 1;
+}
+
+.tv-photo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.tv-photo-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+}
+
+.tv-card-body {
+    padding: 1.25rem;
+}
+
+.tv-name {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.tv-venue {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+}
+
+.tv-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.tv-meta-item {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.tv-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+    padding: 0.75rem;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    margin-bottom: 1rem;
+}
+
+.tv-stat {
+    text-align: center;
+}
+
+.tv-stat-value {
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.tv-stat-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.tv-tariff {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0.75rem;
+    background: rgba(233, 69, 96, 0.1);
+    border-radius: 6px;
+}
+
+.tv-tariff-label {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.tv-tariff-value {
+    font-weight: 700;
+    color: var(--accent);
+}
+
+.tv-card-footer {
+    padding: 1rem 1.25rem;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 0.5rem;
+}
+
+.tv-card-footer .btn {
+    flex: 1;
+}
+
+.empty-state-large {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: var(--bg-card);
+    border: 2px dashed var(--border);
+    border-radius: 16px;
+}
+
+.empty-state-large .empty-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+
+.empty-state-large h2 {
+    margin-bottom: 0.5rem;
+}
+
+.empty-state-large p {
+    color: var(--text-secondary);
+    margin-bottom: 1.5rem;
+}
+
+.btn-lg {
+    padding: 1rem 2rem;
+    font-size: 1.1rem;
+}
+</style>
+{% endblock %}

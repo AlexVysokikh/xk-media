@@ -1,59 +1,85 @@
+<<<<<<< HEAD
 # Python
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
-env/
-venv/
-ENV/
-.venv
-pip-log.txt
-pip-delete-this-directory.txt
-*.egg-info/
-dist/
 build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
 *.egg
 
-# Environment
-.env
-.env.local
-.env.*.local
-env.example.txt
+# Virtual environments
+venv/
+ENV/
+env/
+.venv
 
-# IDE
+# IDEs
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
 
-# OS
-.DS_Store
-Thumbs.db
-
-# Logs
-*.log
-logs/
+# Environment
+.env
+.env.local
+.env.*.local
 
 # Database
 *.db
 *.sqlite
 *.sqlite3
+xk_media.db
 
-# Node (if needed)
-node_modules/
-package-lock.json
+# Logs
+*.log
+logs/
 
-# Coverage
-coverage/
+# OS
+.DS_Store
+Thumbs.db
+
+# Static files uploads
+app/static/uploads/*
+!app/static/uploads/.gitkeep
+
+# Testing
+.pytest_cache/
 .coverage
 htmlcov/
-
-# Docker
-.dockerignore
 
 # Temporary files
 *.tmp
 *.bak
 *.cache
+
+# Alembic
+alembic/versions/*.pyc
+
+# Docker
+.dockerignore
+=======
+node_modules/
+.env
+.DS_Store
+*.log
+dist/
+build/
+coverage/
+.vscode/
+.idea/
+>>>>>>> 23e82bc183e740fb23fe5f82f5c702202c0f7b7e

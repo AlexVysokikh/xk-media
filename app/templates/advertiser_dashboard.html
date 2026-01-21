@@ -1,0 +1,292 @@
+{% extends "base.html" %}
+
+{% block title %}Личный кабинет — XK Media{% endblock %}
+
+{% block head %}
+<style>
+    .metric-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    .metric-card.highlight {
+        background: linear-gradient(135deg, var(--accent), #ff6b6b);
+        border: none;
+    }
+    .metric-card.highlight .metric-value,
+    .metric-card.highlight .metric-label,
+    .metric-card.highlight .metric-icon {
+        color: white;
+    }
+    .metric-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        background: var(--secondary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        flex-shrink: 0;
+    }
+    .metric-card.highlight .metric-icon {
+        background: rgba(255,255,255,0.2);
+    }
+    .metric-content {
+        flex: 1;
+        min-width: 0;
+    }
+    .metric-value {
+        font-size: 1.75rem;
+        font-weight: 700;
+        line-height: 1.2;
+        color: var(--text);
+    }
+    .metric-label {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        white-space: nowrap;
+    }
+    .metric-action {
+        margin-top: 0.5rem;
+    }
+    .quick-stats {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 0.25rem;
+    }
+    .quick-stat {
+        font-size: 0.7rem;
+        padding: 0.2rem 0.5rem;
+        background: var(--secondary);
+        border-radius: 4px;
+        color: var(--text-muted);
+    }
+    .metric-card.highlight .quick-stat {
+        background: rgba(255,255,255,0.15);
+        color: rgba(255,255,255,0.9);
+    }
+</style>
+{% endblock %}
+
+{% block logo %}
+<a href="/advertiser" class="logo">
+    <span class="logo-icon">📺</span>
+    XK Media
+</a>
+{% endblock %}
+
+{% block nav %}
+<a href="/advertiser" class="active">Дашборд</a>
+<a href="/advertiser/stats">Статистика</a>
+<a href="/advertiser/subscriptions">Подписки</a>
+<a href="/advertiser/payments">Платежи</a>
+<a href="/advertiser/profile">Профиль</a>
+<a href="/logout" class="btn btn-secondary btn-sm">Выйти</a>
+{% endblock %}
+
+{% block content %}
+<div class="page-header" style="margin-bottom: 1.5rem;">
+    <h1 class="page-title">👋 Добро пожаловать, {{ user.first_name or user.company_name or user.email }}!</h1>
+    <p class="page-subtitle">Обзор ваших рекламных кампаний</p>
+</div>
+
+<!-- Компактные метрики в одну строку -->
+<div class="grid grid-4" style="margin-bottom: 1.5rem;">
+    <div class="metric-card highlight">
+        <div class="metric-icon">💰</div>
+        <div class="metric-content">
+            <div class="metric-value">{{ stats.balance }} ₽</div>
+            <div class="metric-label">Баланс</div>
+            <a href="/advertiser/payments" class="btn btn-sm" style="margin-top: 0.5rem; padding: 0.35rem 0.75rem; font-size: 0.75rem; background: rgba(255,255,255,0.2); border: none; color: white;">+ Пополнить</a>
+        </div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-icon" style="color: var(--accent);">📺</div>
+        <div class="metric-content">
+            <div class="metric-value" style="color: var(--accent);">{{ stats.total_impressions }}</div>
+            <div class="metric-label">Показов</div>
+            <div class="quick-stats">
+                <span class="quick-stat">За всё время</span>
+            </div>
+        </div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-icon" style="color: var(--success);">🖱️</div>
+        <div class="metric-content">
+            <div class="metric-value" style="color: var(--success);">{{ stats.total_clicks }}</div>
+            <div class="metric-label">Переходов (CPC)</div>
+            <div class="quick-stats">
+                <span class="quick-stat">На ваши сайты</span>
+            </div>
+        </div>
+    </div>
+    <div class="metric-card">
+        <div class="metric-icon" style="color: #6495ed;">📍</div>
+        <div class="metric-content">
+            <div class="metric-value" style="color: #6495ed;">{{ stats.active_tvs }}</div>
+            <div class="metric-label">Активных ТВ</div>
+            <div class="quick-stats">
+                <span class="quick-stat">Размещений</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-2">
+    <!-- Статистика по ТВ-экранам -->
+    <div class="card">
+        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <h3 class="card-title">📺 Показы по ТВ-экранам</h3>
+            <div style="display: flex; gap: 0.5rem;">
+                <a href="/advertiser/stats" class="btn btn-secondary btn-sm">Подробнее</a>
+                <a href="/advertiser/export/csv" class="btn btn-secondary btn-sm" title="Выгрузить CSV">📥</a>
+            </div>
+        </div>
+        
+        {% if campaigns %}
+        <table class="table" style="margin: -0.5rem -1.5rem -1.5rem; width: calc(100% + 3rem);">
+            <thead>
+                <tr>
+                    <th>ТВ-экран</th>
+                    <th style="text-align: right;">Показы</th>
+                    <th style="text-align: right;">CPC</th>
+                    <th style="text-align: center;">Статус</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in campaigns %}
+                <tr>
+                    <td>
+                        <div style="font-weight: 600;">{{ c.tv.name }}</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted);">{{ c.tv.venue_name or c.tv.address or '—' }}</div>
+                    </td>
+                    <td style="text-align: right;">
+                        <span style="font-weight: 600; color: var(--accent);">{{ c.impressions or 0 }}</span>
+                    </td>
+                    <td style="text-align: right;">
+                        <span style="font-weight: 600; color: var(--success);">{{ c.clicks or 0 }}</span>
+                    </td>
+                    <td style="text-align: center;">
+                        {% if c.is_active %}
+                        <span class="badge badge-success">●</span>
+                        {% else %}
+                        <span class="badge badge-danger">●</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot style="background: var(--secondary);">
+                <tr>
+                    <td style="font-weight: 600;">Итого:</td>
+                    <td style="text-align: right; font-weight: 700; color: var(--accent);">{{ stats.total_impressions }}</td>
+                    <td style="text-align: right; font-weight: 700; color: var(--success);">{{ stats.total_clicks }}</td>
+                    <td></td>
+                </tr>
+            </tfoot>
+        </table>
+        {% else %}
+        <div style="text-align: center; padding: 2rem; color: var(--text-muted);">
+            <p style="font-size: 1rem; margin-bottom: 0.5rem;">📭 Нет активных размещений</p>
+            <a href="/advertiser/subscriptions" class="btn btn-primary btn-sm" style="margin-top: 0.5rem;">Оформить подписку</a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Правая колонка -->
+    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+        <!-- Активные подписки -->
+        <div class="card">
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 0.75rem; margin-bottom: 0.75rem;">
+                <h3 class="card-title" style="font-size: 1.1rem;">📅 Подписки</h3>
+                <a href="/advertiser/subscriptions" class="btn btn-primary btn-sm" style="padding: 0.4rem 0.75rem; font-size: 0.8rem;">+ Оформить</a>
+            </div>
+            {% if subscriptions %}
+            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                {% for s in subscriptions[:3] %}
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 0.75rem; background: var(--secondary); border-radius: 6px; border-left: 3px solid {% if s.is_active %}var(--success){% else %}var(--text-muted){% endif %};">
+                    <div style="min-width: 0;">
+                        <div style="font-weight: 500; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ s.tv.name }}</div>
+                        <div style="font-size: 0.7rem; color: var(--text-muted);">{{ s.start_date.strftime('%d.%m') }} — {{ s.end_date.strftime('%d.%m.%Y') }}</div>
+                    </div>
+                    <div style="text-align: right; flex-shrink: 0; margin-left: 0.5rem;">
+                        <div style="font-weight: 600; font-size: 0.9rem;">{{ "%.0f"|format(s.price) }} ₽</div>
+                        {% if s.is_active %}<span class="badge badge-success" style="font-size: 0.6rem; padding: 0.15rem 0.4rem;">●</span>{% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% if subscriptions|length > 3 %}
+            <div style="margin-top: 0.5rem; text-align: center;">
+                <a href="/advertiser/subscriptions" style="font-size: 0.8rem;">Все подписки ({{ subscriptions|length }}) →</a>
+            </div>
+            {% endif %}
+            {% else %}
+            <div style="text-align: center; padding: 1rem; color: var(--text-muted); font-size: 0.9rem;">
+                Нет активных подписок
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Последние платежи -->
+        <div class="card">
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 0.75rem; margin-bottom: 0.75rem;">
+                <h3 class="card-title" style="font-size: 1.1rem;">💳 Платежи</h3>
+                <a href="/advertiser/payments" style="font-size: 0.8rem;">Все →</a>
+            </div>
+            {% if payments %}
+            <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+                {% for p in payments[:4] %}
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.4rem 0; border-bottom: 1px solid var(--border);">
+                    <div>
+                        <span style="font-weight: 500;">+{{ "%.0f"|format(p.amount) }} ₽</span>
+                        <span style="font-size: 0.7rem; color: var(--text-muted); margin-left: 0.5rem;">{{ p.created_at.strftime('%d.%m.%y') }}</span>
+                    </div>
+                    {% if p.status == 'succeeded' %}
+                    <span style="color: var(--success); font-size: 0.9rem;">✓</span>
+                    {% elif p.status in ['pending', 'waiting'] %}
+                    <span style="color: var(--warning); font-size: 0.9rem;">⏳</span>
+                    {% else %}
+                    <span style="color: var(--accent); font-size: 0.9rem;">✗</span>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            <div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--border); display: flex; justify-content: space-between; font-size: 0.85rem;">
+                <span style="color: var(--text-muted);">Всего:</span>
+                <span style="font-weight: 600; color: var(--success);">{{ stats.total_paid }} ₽</span>
+            </div>
+            {% else %}
+            <div style="text-align: center; padding: 1rem; color: var(--text-muted); font-size: 0.9rem;">
+                Платежей пока нет
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Текущий тариф -->
+<div class="card" style="margin-top: 1.5rem; background: linear-gradient(135deg, #1a1a2e, #16213e); padding: 1rem 1.5rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            <span style="font-size: 1.75rem;">🏷️</span>
+            <div>
+                <div style="font-weight: 700; font-size: 1.1rem;">Тариф: Базовый</div>
+                <div style="font-size: 0.8rem; color: var(--text-muted);">500 ₽/день за 1 ТВ-экран</div>
+            </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 1.5rem;">
+            <div style="text-align: right;">
+                <div style="font-size: 0.75rem; color: var(--text-muted);">Компания</div>
+                <div style="font-weight: 500;">{{ user.company_name or '—' }}</div>
+            </div>
+            <a href="/advertiser/profile" class="btn btn-secondary btn-sm" style="padding: 0.4rem 0.75rem;">Профиль</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

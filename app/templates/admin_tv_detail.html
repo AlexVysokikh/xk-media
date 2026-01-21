@@ -1,0 +1,290 @@
+{% extends "base.html" %}
+
+{% block title %}{{ tv.name }} — Админ{% endblock %}
+
+{% block logo %}
+<a href="/admin" class="logo">
+    <span class="logo-icon">📺</span>
+    XK Media
+</a>
+{% endblock %}
+
+{% block nav %}
+<a href="/admin">Дашборд</a>
+<a href="/admin/users">Пользователи</a>
+<a href="/admin/tvs" class="active">Экраны</a>
+<a href="/admin/payments">Платежи</a>
+<a href="/admin/payouts">Выплаты</a>
+<a href="/admin/settings">Настройки</a>
+<a href="/logout" class="btn btn-secondary btn-sm">Выйти</a>
+{% endblock %}
+
+{% block content %}
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start;">
+    <div>
+        <a href="/admin/tvs" style="color: var(--text-muted); font-size: 0.875rem;">← Назад к списку</a>
+        <h1 class="page-title" style="margin-top: 0.5rem;">📺 {{ tv.name }}</h1>
+        <p class="page-subtitle">
+            Код: <code style="background: var(--secondary); padding: 0.25rem 0.5rem; border-radius: 4px;">{{ tv.code }}</code>
+            {% if tv.venue_name %} · {{ tv.venue_name }}{% endif %}
+        </p>
+    </div>
+    <div style="display: flex; gap: 0.5rem;">
+        <a href="/admin/tv/{{ tv.code }}/advertisers" class="btn btn-primary btn-sm">📢 Рекламодатели</a>
+        <a href="/tv/{{ tv.code }}" target="_blank" class="btn btn-secondary btn-sm">👁 Превью</a>
+        <a href="/admin/tv/{{ tv.code }}/delete" class="btn btn-secondary btn-sm" style="color: var(--accent);"
+           onclick="return confirm('Удалить ТВ?')">🗑 Удалить</a>
+    </div>
+</div>
+
+<div class="grid grid-2">
+    <!-- Основная информация -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">📋 Основная информация</h3>
+        </div>
+        <form method="POST" action="/admin/tv/{{ tv.code }}">
+            <div class="grid grid-2">
+                <div class="form-group">
+                    <label class="form-label">Код ТВ</label>
+                    <input type="text" value="{{ tv.code }}" class="form-input" readonly style="opacity: 0.7;">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Название ТВ</label>
+                    <input type="text" name="name" value="{{ tv.name }}" class="form-input" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Название заведения</label>
+                <input type="text" name="venue_name" value="{{ tv.venue_name or '' }}" class="form-input" placeholder="Кофейня «Рассвет»">
+            </div>
+            <div class="grid grid-2">
+                <div class="form-group">
+                    <label class="form-label">Категория</label>
+                    <select name="category" class="form-input">
+                        {% for key, val in categories.items() %}
+                        <option value="{{ key }}" {% if tv.category == key %}selected{% endif %}>{{ val }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Целевая аудитория</label>
+                    <select name="target_audience" class="form-input">
+                        {% for key, val in audiences.items() %}
+                        <option value="{{ key }}" {% if tv.target_audience == key %}selected{% endif %}>{{ val }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Описание</label>
+                <textarea name="description" class="form-input" rows="2">{{ tv.description or '' }}</textarea>
+            </div>
+            <div class="form-group">
+                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                    <input type="checkbox" name="is_active" {% if tv.is_active %}checked{% endif %}>
+                    <span>Активен</span>
+                </label>
+            </div>
+            <button type="submit" class="btn btn-primary">Сохранить</button>
+        </form>
+    </div>
+
+    <!-- Адрес и юр. лицо -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">📍 Адрес и юр. лицо</h3>
+        </div>
+        <form method="POST" action="/admin/tv/{{ tv.code }}/location">
+            <div class="form-group">
+                <label class="form-label">Город</label>
+                <input type="text" name="city" value="{{ tv.city or '' }}" class="form-input" placeholder="Москва">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Адрес</label>
+                <input type="text" name="address" value="{{ tv.address or '' }}" class="form-input" placeholder="ул. Тверская, д. 1">
+            </div>
+            
+            <hr style="border: none; border-top: 1px solid var(--border); margin: 1.5rem 0;">
+            
+            <div class="form-group">
+                <label class="form-label">Юр. название</label>
+                <input type="text" name="legal_name" value="{{ tv.legal_name or '' }}" class="form-input" placeholder="ООО «Рассвет»">
+            </div>
+            <div class="grid grid-2">
+                <div class="form-group">
+                    <label class="form-label">ИНН</label>
+                    <input type="text" name="inn" value="{{ tv.inn or '' }}" class="form-input" maxlength="12">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">% выплаты</label>
+                    <input type="number" name="revenue_share" value="{{ tv.revenue_share or 30 }}" class="form-input" min="0" max="100">
+                </div>
+            </div>
+            
+            <hr style="border: none; border-top: 1px solid var(--border); margin: 1.5rem 0;">
+            
+            <div class="form-group">
+                <label class="form-label">Контактное лицо</label>
+                <input type="text" name="contact_person" value="{{ tv.contact_person or '' }}" class="form-input">
+            </div>
+            <div class="grid grid-2">
+                <div class="form-group">
+                    <label class="form-label">Телефон</label>
+                    <input type="tel" name="contact_phone" value="{{ tv.contact_phone or '' }}" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" name="contact_email" value="{{ tv.contact_email or '' }}" class="form-input">
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary">Сохранить</button>
+        </form>
+    </div>
+</div>
+
+<!-- Привязка к площадке -->
+<div class="card" style="margin-top: 1.5rem;">
+    <div class="card-header">
+        <h3 class="card-title">🏢 Владелец (площадка)</h3>
+    </div>
+    <form method="POST" action="/admin/tv/{{ tv.code }}/owner" style="display: flex; gap: 1rem; align-items: flex-end;">
+        <div class="form-group" style="margin: 0; flex: 1;">
+            <label class="form-label">Выберите площадку</label>
+            <select name="venue_id" class="form-input">
+                <option value="">— Не привязан —</option>
+                {% for v in venues %}
+                <option value="{{ v.id }}" {% if tv.venue_id == v.id %}selected{% endif %}>
+                    {{ v.company_name or v.email }} {% if v.inn %}(ИНН: {{ v.inn }}){% endif %}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Сохранить</button>
+    </form>
+</div>
+
+<!-- Рекламные ссылки -->
+<div class="card" style="margin-top: 1.5rem;">
+    <div class="card-header">
+        <h3 class="card-title">🔗 Рекламные ссылки ({{ links|length }})</h3>
+    </div>
+    
+    <!-- Форма добавления -->
+    <form method="POST" action="/admin/tv/{{ tv.code }}/add-link" style="display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border);">
+        <div class="form-group" style="margin: 0; min-width: 150px;">
+            <label class="form-label">Рекламодатель</label>
+            <select name="advertiser_id" class="form-input" required>
+                <option value="">Выберите...</option>
+                {% for a in advertisers %}
+                <option value="{{ a.id }}">{{ a.company_name or a.first_name or a.email }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group" style="margin: 0; flex: 1; min-width: 150px;">
+            <label class="form-label">Заголовок</label>
+            <input type="text" name="title" class="form-input" placeholder="Акция -20%" required>
+        </div>
+        <div class="form-group" style="margin: 0; flex: 2; min-width: 200px;">
+            <label class="form-label">URL</label>
+            <input type="url" name="url" class="form-input" placeholder="https://example.com" required>
+        </div>
+        <div class="form-group" style="margin: 0; flex: 1; min-width: 150px;">
+            <label class="form-label">Описание</label>
+            <input type="text" name="description" class="form-input" placeholder="Краткое описание">
+        </div>
+        <button type="submit" class="btn btn-primary" style="align-self: flex-end;">+ Добавить</button>
+    </form>
+    
+    <!-- Список ссылок -->
+    <table class="table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Рекламодатель</th>
+                <th>Заголовок / URL</th>
+                <th>Клики</th>
+                <th>Статус</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for link in links %}
+            <tr>
+                <td>{{ link.position + 1 }}</td>
+                <td>{{ link.advertiser_name or '—' }}</td>
+                <td>
+                    <div style="font-weight: 600;">{{ link.title }}</div>
+                    <a href="{{ link.url }}" target="_blank" style="font-size: 0.75rem;">{{ link.url[:50] }}...</a>
+                    {% if link.description %}
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">{{ link.description }}</div>
+                    {% endif %}
+                </td>
+                <td style="font-weight: 600;">{{ link.clicks }}</td>
+                <td>
+                    {% if link.is_active %}
+                    <span class="badge badge-success">Активна</span>
+                    {% else %}
+                    <span class="badge badge-danger">Неактивна</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="/admin/tv/{{ tv.code }}/link/{{ link.id }}/delete" 
+                       class="btn btn-secondary btn-sm" style="color: var(--accent);"
+                       onclick="return confirm('Удалить ссылку?')">🗑</a>
+                </td>
+            </tr>
+            {% endfor %}
+            {% if not links %}
+            <tr>
+                <td colspan="6" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                    Ссылок пока нет. Добавьте первую выше.
+                </td>
+            </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Подписки на этот ТВ -->
+<div class="card" style="margin-top: 1.5rem;">
+    <div class="card-header">
+        <h3 class="card-title">📅 Активные подписки</h3>
+    </div>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Рекламодатель</th>
+                <th>Период</th>
+                <th>Стоимость</th>
+                <th>Выплата площадке</th>
+                <th>Статус</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for s in subscriptions %}
+            <tr>
+                <td>
+                    <a href="/admin/user/{{ s.advertiser_id }}">{{ s.advertiser.company_name or s.advertiser.email }}</a>
+                </td>
+                <td>{{ s.start_date.strftime('%d.%m.%Y') }} — {{ s.end_date.strftime('%d.%m.%Y') }}</td>
+                <td>{{ "%.0f"|format(s.price) }} ₽</td>
+                <td>{{ "%.0f"|format(s.venue_payout) }} ₽</td>
+                <td>
+                    {% if s.is_active %}
+                    <span class="badge badge-success">Активна</span>
+                    {% else %}
+                    <span class="badge badge-danger">Завершена</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+            {% if not subscriptions %}
+            <tr>
+                <td colspan="5" style="text-align: center; color: var(--text-muted);">Подписок нет</td>
+            </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

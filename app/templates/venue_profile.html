@@ -1,0 +1,249 @@
+{% extends "base.html" %}
+
+{% block title %}Профиль — XK Media{% endblock %}
+
+{% block logo %}
+<a href="/venue" class="logo">
+    <span class="logo-icon">📺</span>
+    XK Media
+</a>
+{% endblock %}
+
+{% block nav %}
+<a href="/venue">Обзор</a>
+<a href="/venue/tvs">Мои ТВ</a>
+<a href="/venue/earnings">Доходы</a>
+<a href="/venue/profile" class="active">Профиль</a>
+<a href="/logout" class="btn btn-secondary btn-sm">Выйти</a>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <div>
+        <h1>👤 Профиль</h1>
+        <p class="subtitle">Настройки аккаунта</p>
+    </div>
+</div>
+
+<nav class="tabs">
+    <a href="/venue" class="tab">Обзор</a>
+    <a href="/venue/tvs" class="tab">Мои ТВ</a>
+    <a href="/venue/advertisers" class="tab">Рекламодатели</a>
+    <a href="/venue/earnings" class="tab">Доходы</a>
+    <a href="/venue/documents" class="tab">Документы</a>
+    <a href="/venue/profile" class="tab active">Профиль</a>
+</nav>
+
+{% if success %}
+<div class="alert alert-success">{{ success }}</div>
+{% endif %}
+
+<div class="grid grid-2">
+    <!-- Personal Info -->
+    <div class="card">
+        <div class="card-header">
+            <h3>👤 Личные данные</h3>
+        </div>
+        <div class="card-content">
+            <form method="POST" action="/venue/profile">
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" value="{{ user.email }}" disabled>
+                    <span class="form-hint">Email нельзя изменить</span>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="first_name">Имя</label>
+                        <input type="text" id="first_name" name="first_name" value="{{ user.first_name or '' }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="last_name">Фамилия</label>
+                        <input type="text" id="last_name" name="last_name" value="{{ user.last_name or '' }}">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="phone">Телефон</label>
+                    <input type="tel" id="phone" name="phone" value="{{ user.phone or '' }}" placeholder="+7 (999) 123-45-67">
+                </div>
+                
+                <button type="submit" class="btn btn-primary">Сохранить</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Company Info -->
+    <div class="card">
+        <div class="card-header">
+            <h3>🏢 Данные компании</h3>
+        </div>
+        <div class="card-content">
+            <form method="POST" action="/venue/profile">
+                <div class="form-group">
+                    <label for="company_name">Название компании</label>
+                    <input type="text" id="company_name" name="company_name" value="{{ user.company_name or '' }}">
+                </div>
+                
+                <div class="form-group">
+                    <label for="legal_name">Юридическое название</label>
+                    <input type="text" id="legal_name" name="legal_name" value="{{ user.legal_name or '' }}" placeholder='ООО "Название"'>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="inn">ИНН</label>
+                        <input type="text" id="inn" name="inn" value="{{ user.inn or '' }}" maxlength="12">
+                    </div>
+                    <div class="form-group">
+                        <label for="kpp">КПП</label>
+                        <input type="text" id="kpp" name="kpp" value="{{ user.kpp or '' }}" maxlength="9">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="legal_address">Юридический адрес</label>
+                    <input type="text" id="legal_address" name="legal_address" value="{{ user.legal_address or '' }}">
+                </div>
+                
+                <div class="form-group">
+                    <label for="website">Сайт</label>
+                    <input type="url" id="website" name="website" value="{{ user.website or '' }}" placeholder="https://example.com">
+                </div>
+                
+                <div class="form-group">
+                    <label for="description">Описание</label>
+                    <textarea id="description" name="description" rows="3">{{ user.description or '' }}</textarea>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">Сохранить</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Change Password -->
+<div class="card">
+    <div class="card-header">
+        <h3>🔐 Изменить пароль</h3>
+    </div>
+    <div class="card-content">
+        <form method="POST" action="/venue/profile/password" class="password-form">
+            <div class="form-row-3">
+                <div class="form-group">
+                    <label for="current_password">Текущий пароль</label>
+                    <input type="password" id="current_password" name="current_password" required>
+                </div>
+                <div class="form-group">
+                    <label for="new_password">Новый пароль</label>
+                    <input type="password" id="new_password" name="new_password" required minlength="6">
+                </div>
+                <div class="form-group">
+                    <label for="confirm_password">Подтвердите пароль</label>
+                    <input type="password" id="confirm_password" name="confirm_password" required>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-outline">Изменить пароль</button>
+        </form>
+    </div>
+</div>
+
+<!-- My TVs Summary -->
+<div class="card">
+    <div class="card-header">
+        <h3>📺 Мои ТВ-экраны</h3>
+        <a href="/venue/tvs" class="btn btn-sm">Управление →</a>
+    </div>
+    <div class="card-content">
+        {% if tvs %}
+        <div class="tvs-summary">
+            {% for tv in tvs %}
+            <div class="tv-summary-item">
+                <div class="tv-summary-name">{{ tv.name }}</div>
+                <div class="tv-summary-venue">{{ tv.venue_name or tv.address or "—" }}</div>
+                <div class="tv-summary-status">
+                    {% if tv.is_approved and tv.is_active %}
+                    <span class="badge badge-success">Активен</span>
+                    {% elif not tv.is_approved %}
+                    <span class="badge badge-warning">На модерации</span>
+                    {% else %}
+                    <span class="badge badge-secondary">Неактивен</span>
+                    {% endif %}
+                </div>
+                <div class="tv-summary-share">{{ tv.revenue_share | int }}%</div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state-small">
+            <p>У вас пока нет ТВ-экранов</p>
+            <a href="/venue/tv/add" class="btn btn-primary">Добавить ТВ</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.form-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+.form-row-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+
+@media (max-width: 768px) {
+    .form-row, .form-row-3 {
+        grid-template-columns: 1fr;
+    }
+}
+
+.password-form {
+    max-width: 800px;
+}
+
+.tvs-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.tv-summary-item {
+    display: grid;
+    grid-template-columns: 2fr 2fr 1fr 80px;
+    gap: 1rem;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+}
+
+.tv-summary-name {
+    font-weight: 600;
+}
+
+.tv-summary-venue {
+    color: var(--text-secondary);
+}
+
+.tv-summary-share {
+    font-weight: 700;
+    color: var(--accent);
+    text-align: right;
+}
+
+@media (max-width: 768px) {
+    .tv-summary-item {
+        grid-template-columns: 1fr auto;
+    }
+    
+    .tv-summary-venue {
+        display: none;
+    }
+}
+</style>
+{% endblock %}

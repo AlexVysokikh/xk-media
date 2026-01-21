@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+
+{% block title %}Выплаты — Админ{% endblock %}
+
+{% block logo %}
+<a href="/admin" class="logo">
+    <span class="logo-icon">📺</span>
+    XK Media
+</a>
+{% endblock %}
+
+{% block nav %}
+<a href="/admin">Дашборд</a>
+<a href="/admin/users">Пользователи</a>
+<a href="/admin/tvs">Экраны</a>
+<a href="/admin/payments">Платежи</a>
+<a href="/admin/payouts" class="active">Выплаты</a>
+<a href="/admin/settings">Настройки</a>
+<a href="/logout" class="btn btn-secondary btn-sm">Выйти</a>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">💸 Выплаты площадкам</h1>
+    <p class="page-subtitle">Управление выплатами владельцам ТВ-экранов</p>
+</div>
+
+<!-- Статистика -->
+<div class="grid grid-3" style="margin-bottom: 1.5rem;">
+    <div class="card stat-card">
+        <div class="stat-value">{{ stats.total_payouts }} ₽</div>
+        <div class="stat-label">Всего выплачено</div>
+    </div>
+    <div class="card stat-card">
+        <div class="stat-value" style="color: var(--warning);">{{ stats.pending_payouts }} ₽</div>
+        <div class="stat-label">Ожидают выплаты</div>
+    </div>
+    <div class="card stat-card">
+        <div class="stat-value">{{ stats.venues_count }}</div>
+        <div class="stat-label">Площадок</div>
+    </div>
+</div>
+
+<!-- Таблица начислений по площадкам -->
+<div class="card" style="margin-bottom: 1.5rem;">
+    <div class="card-header">
+        <h3 class="card-title">📊 Начисления по площадкам</h3>
+    </div>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Площадка</th>
+                <th>ТВ</th>
+                <th>Начислено</th>
+                <th>Выплачено</th>
+                <th>К выплате</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in venue_stats %}
+            <tr>
+                <td>
+                    <div style="font-weight: 600;">{{ item.venue.company_name or item.venue.email }}</div>
+                    {% if item.venue.inn %}
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">ИНН: {{ item.venue.inn }}</div>
+                    {% endif %}
+                </td>
+                <td>{{ item.tv_count }}</td>
+                <td>{{ "%.0f"|format(item.total_earned) }} ₽</td>
+                <td style="color: var(--success);">{{ "%.0f"|format(item.total_paid) }} ₽</td>
+                <td style="font-weight: 700; color: var(--warning);">{{ "%.0f"|format(item.pending) }} ₽</td>
+                <td>
+                    {% if item.pending > 0 %}
+                    <a href="/admin/payout/create?venue_id={{ item.venue.id }}&amount={{ item.pending }}" 
+                       class="btn btn-primary btn-sm">Выплатить</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+            {% if not venue_stats %}
+            <tr>
+                <td colspan="6" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                    Нет данных о начислениях
+                </td>
+            </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+
+<!-- История выплат -->
+<div class="card">
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <h3 class="card-title">📜 История выплат</h3>
+        <button onclick="document.getElementById('payoutModal').style.display='flex'" class="btn btn-primary btn-sm">
+            + Создать выплату
+        </button>
+    </div>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Дата</th>
+                <th>Площадка</th>
+                <th>Период</th>
+                <th>Сумма</th>
+                <th>Статус</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in payouts %}
+            <tr>
+                <td>#{{ p.id }}</td>
+                <td>{{ p.created_at.strftime('%d.%m.%Y') }}</td>
+                <td>
+                    {% if p.venue %}
+                    {{ p.venue.company_name or p.venue.email }}
+                    {% else %}
+                    ID: {{ p.venue_id }}
+                    {% endif %}
+                </td>
+                <td>{{ p.period_start.strftime('%d.%m') }} — {{ p.period_end.strftime('%d.%m.%Y') }}</td>
+                <td style="font-weight: 700;">{{ "%.0f"|format(p.amount) }} ₽</td>
+                <td>
+                    {% if p.status == 'paid' %}
+                    <span class="badge badge-success">Выплачено</span>
+                    {% elif p.status == 'processing' %}
+                    <span class="badge badge-warning">В обработке</span>
+                    {% else %}
+                    <span class="badge badge-info">Ожидание</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if p.status == 'pending' %}
+                    <a href="/admin/payout/{{ p.id }}/process" class="btn btn-secondary btn-sm">В обработку</a>
+                    {% elif p.status == 'processing' %}
+                    <a href="/admin/payout/{{ p.id }}/complete" class="btn btn-primary btn-sm">Завершить</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+            {% if not payouts %}
+            <tr>
+                <td colspan="7" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                    Выплат пока не было
+                </td>
+            </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Модальное окно создания выплаты -->
+<div id="payoutModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1000; align-items: center; justify-content: center; padding: 2rem;">
+    <div class="card" style="max-width: 500px; width: 100%;">
+        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <h3 class="card-title">💸 Создать выплату</h3>
+            <button onclick="document.getElementById('payoutModal').style.display='none'" 
+                    style="background: none; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer;">×</button>
+        </div>
+        <form method="POST" action="/admin/payout/create">
+            <div class="form-group">
+                <label class="form-label">Площадка</label>
+                <select name="venue_id" class="form-input" required>
+                    <option value="">Выберите площадку...</option>
+                    {% for v in venues %}
+                    <option value="{{ v.id }}">{{ v.company_name or v.email }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="grid grid-2">
+                <div class="form-group">
+                    <label class="form-label">Период с</label>
+                    <input type="date" name="period_start" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Период по</label>
+                    <input type="date" name="period_end" class="form-input" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Сумма (₽)</label>
+                <input type="number" name="amount" class="form-input" min="1" step="1" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Реквизиты / комментарий</label>
+                <textarea name="payment_details" class="form-input" rows="2"></textarea>
+            </div>
+            <div style="display: flex; gap: 1rem;">
+                <button type="submit" class="btn btn-primary">Создать</button>
+                <button type="button" onclick="document.getElementById('payoutModal').style.display='none'" class="btn btn-secondary">Отмена</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

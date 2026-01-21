@@ -1,0 +1,380 @@
+{% extends "base.html" %}
+
+{% block title %}Рекламодатели — XK Media{% endblock %}
+
+{% block logo %}
+<a href="/venue" class="logo">
+    <span class="logo-icon">📺</span>
+    XK Media
+</a>
+{% endblock %}
+
+{% block nav %}
+<a href="/venue">Обзор</a>
+<a href="/venue/tvs">Мои ТВ</a>
+<a href="/venue/earnings">Доходы</a>
+<a href="/venue/profile">Профиль</a>
+<a href="/logout" class="btn btn-secondary btn-sm">Выйти</a>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <div>
+        <h1>📢 Рекламодатели</h1>
+        <p class="subtitle">Кто размещает рекламу на ваших ТВ</p>
+    </div>
+</div>
+
+<nav class="tabs">
+    <a href="/venue" class="tab">Обзор</a>
+    <a href="/venue/tvs" class="tab">Мои ТВ</a>
+    <a href="/venue/advertisers" class="tab active">Рекламодатели</a>
+    <a href="/venue/earnings" class="tab">Доходы</a>
+    <a href="/venue/documents" class="tab">Документы</a>
+    <a href="/venue/profile" class="tab">Профиль</a>
+</nav>
+
+<!-- Stats -->
+<div class="grid grid-3">
+    <div class="card stat-card">
+        <div class="stat-icon">📢</div>
+        <div class="stat-value">{{ advertiser_data | list | length }}</div>
+        <div class="stat-label">Рекламодателей</div>
+    </div>
+    <div class="card stat-card">
+        <div class="stat-icon">💵</div>
+        <div class="stat-value">{{ total_revenue }} ₽</div>
+        <div class="stat-label">Общий оборот</div>
+    </div>
+    <div class="card stat-card highlight">
+        <div class="stat-icon">💰</div>
+        <div class="stat-value">{{ total_venue_share }} ₽</div>
+        <div class="stat-label">Ваша доля</div>
+    </div>
+</div>
+
+<!-- Filter by TV -->
+{% if tvs | length > 1 %}
+<div class="card filter-card">
+    <div class="filter-row">
+        <span class="filter-label">Фильтр по ТВ:</span>
+        <div class="filter-buttons">
+            <a href="/venue/advertisers" class="btn btn-sm {{ 'btn-primary' if not selected_tv_id else 'btn-outline' }}">Все</a>
+            {% for tv in tvs %}
+            <a href="/venue/advertisers?tv_id={{ tv.id }}" class="btn btn-sm {{ 'btn-primary' if selected_tv_id == tv.id else 'btn-outline' }}">{{ tv.name }}</a>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Advertisers Table -->
+<div class="card">
+    <div class="card-header">
+        <h3>📋 Список рекламодателей</h3>
+    </div>
+    <div class="card-content">
+        {% if advertiser_data | list | length > 0 %}
+        <div class="advertisers-list">
+            {% for data in advertiser_data %}
+            <div class="advertiser-card">
+                <div class="advertiser-header">
+                    <div class="advertiser-info">
+                        {% if data.advertiser.logo_url %}
+                        <img src="{{ data.advertiser.logo_url }}" alt="" class="advertiser-logo">
+                        {% else %}
+                        <div class="advertiser-logo-placeholder">{{ (data.advertiser.company_name or data.advertiser.email)[0].upper() }}</div>
+                        {% endif %}
+                        <div>
+                            <div class="advertiser-name">{{ data.advertiser.company_name or data.advertiser.email }}</div>
+                            {% if data.advertiser.website %}
+                            <a href="{{ data.advertiser.website }}" target="_blank" class="advertiser-website">{{ data.advertiser.website }}</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="advertiser-tvs">
+                        {% for tv_name in data.tv_names %}
+                        <span class="badge badge-info">{{ tv_name }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <div class="advertiser-stats">
+                    <div class="advertiser-stat">
+                        <div class="advertiser-stat-value">{{ data.subscriptions | length }}</div>
+                        <div class="advertiser-stat-label">Подписок</div>
+                    </div>
+                    <div class="advertiser-stat">
+                        <div class="advertiser-stat-value">{{ "{:,.0f}".format(data.total_paid).replace(",", " ") }} ₽</div>
+                        <div class="advertiser-stat-label">Оплачено</div>
+                    </div>
+                    <div class="advertiser-stat highlight">
+                        <div class="advertiser-stat-value">{{ "{:,.0f}".format(data.venue_share).replace(",", " ") }} ₽</div>
+                        <div class="advertiser-stat-label">Ваша доля</div>
+                    </div>
+                </div>
+                
+                {% if data.subscriptions %}
+                <div class="advertiser-subs">
+                    <div class="subs-header">Подписки:</div>
+                    {% for sub in data.subscriptions[:3] %}
+                    <div class="sub-row">
+                        <span class="sub-tv">{{ sub.tv.name if sub.tv else "—" }}</span>
+                        <span class="sub-period">{{ sub.start_date.strftime("%d.%m") }} — {{ sub.end_date.strftime("%d.%m.%Y") }}</span>
+                        <span class="sub-amount">{{ "{:,.0f}".format(sub.venue_payout or 0).replace(",", " ") }} ₽</span>
+                        {% set today = sub.start_date.__class__.today() %}
+                        {% if sub.start_date <= today <= sub.end_date %}
+                        <span class="badge badge-success badge-sm">Активна</span>
+                        {% elif today < sub.start_date %}
+                        <span class="badge badge-info badge-sm">Ожидает</span>
+                        {% else %}
+                        <span class="badge badge-secondary badge-sm">Завершена</span>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                    {% if data.subscriptions | length > 3 %}
+                    <div class="sub-more">+ ещё {{ data.subscriptions | length - 3 }} подписок</div>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">📢</div>
+            <p>Пока нет рекламодателей на ваших ТВ</p>
+            <p class="text-secondary">Они появятся после первых размещений</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Active Links -->
+{% if links %}
+<div class="card">
+    <div class="card-header">
+        <h3>🔗 Активные рекламные материалы</h3>
+    </div>
+    <div class="card-content">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>ТВ</th>
+                    <th>Рекламодатель</th>
+                    <th>Реклама</th>
+                    <th>Показы</th>
+                    <th>Переходы</th>
+                    <th>Статус</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for link in links %}
+                <tr>
+                    <td>{{ link.tv.name if link.tv else "—" }}</td>
+                    <td>{{ link.advertiser_name or "—" }}</td>
+                    <td>
+                        <strong>{{ link.title }}</strong>
+                        {% if link.description %}
+                        <br><span class="text-secondary">{{ link.description[:50] }}...</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ "{:,}".format(link.impressions or 0).replace(",", " ") }}</td>
+                    <td>{{ link.clicks or 0 }}</td>
+                    <td>
+                        <span class="badge {{ 'badge-success' if link.is_active else 'badge-secondary' }}">
+                            {{ "Активна" if link.is_active else "Неактивна" }}
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endif %}
+
+<style>
+.filter-card {
+    padding: 1rem 1.5rem;
+}
+
+.filter-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.filter-label {
+    font-weight: 500;
+}
+
+.filter-buttons {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.advertisers-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.advertiser-card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+}
+
+.advertiser-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+}
+
+.advertiser-info {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.advertiser-logo {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    object-fit: cover;
+}
+
+.advertiser-logo-placeholder {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    background: var(--accent);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
+.advertiser-name {
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.advertiser-website {
+    font-size: 0.85rem;
+    color: var(--accent);
+}
+
+.advertiser-tvs {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.advertiser-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    padding: 1rem;
+    background: var(--bg-card);
+    border-radius: 8px;
+    margin-bottom: 1rem;
+}
+
+.advertiser-stat {
+    text-align: center;
+}
+
+.advertiser-stat.highlight {
+    background: rgba(233, 69, 96, 0.1);
+    border-radius: 8px;
+    padding: 0.5rem;
+}
+
+.advertiser-stat-value {
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.advertiser-stat.highlight .advertiser-stat-value {
+    color: var(--accent);
+}
+
+.advertiser-stat-label {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.advertiser-subs {
+    background: var(--bg-card);
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.subs-header {
+    font-weight: 500;
+    margin-bottom: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.sub-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.sub-row:last-child {
+    border-bottom: none;
+}
+
+.sub-tv {
+    font-weight: 500;
+    min-width: 120px;
+}
+
+.sub-period {
+    color: var(--text-secondary);
+    flex: 1;
+}
+
+.sub-amount {
+    font-weight: 600;
+    color: var(--accent);
+}
+
+.sub-more {
+    padding-top: 0.5rem;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+}
+
+.badge-sm {
+    padding: 0.125rem 0.5rem;
+    font-size: 0.75rem;
+}
+
+@media (max-width: 768px) {
+    .advertiser-header {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .advertiser-stats {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    
+    .sub-row {
+        flex-wrap: wrap;
+    }
+}
+</style>
+{% endblock %}

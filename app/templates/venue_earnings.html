@@ -1,0 +1,365 @@
+{% extends "base.html" %}
+
+{% block title %}Доходы и выплаты — XK Media{% endblock %}
+
+{% block logo %}
+<a href="/venue" class="logo">
+    <span class="logo-icon">📺</span>
+    XK Media
+</a>
+{% endblock %}
+
+{% block nav %}
+<a href="/venue">Обзор</a>
+<a href="/venue/tvs">Мои ТВ</a>
+<a href="/venue/earnings" class="active">Доходы</a>
+<a href="/venue/profile">Профиль</a>
+<a href="/logout" class="btn btn-secondary btn-sm">Выйти</a>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <div>
+        <h1>💰 Доходы и выплаты</h1>
+        <p class="subtitle">Финансовая статистика по вашим ТВ</p>
+    </div>
+</div>
+
+<nav class="tabs">
+    <a href="/venue" class="tab">Обзор</a>
+    <a href="/venue/tvs" class="tab">Мои ТВ</a>
+    <a href="/venue/advertisers" class="tab">Рекламодатели</a>
+    <a href="/venue/earnings" class="tab active">Доходы</a>
+    <a href="/venue/documents" class="tab">Документы</a>
+    <a href="/venue/profile" class="tab">Профиль</a>
+</nav>
+
+<!-- Stats -->
+<div class="grid grid-4">
+    <div class="card stat-card">
+        <div class="stat-icon">💵</div>
+        <div class="stat-value">{{ stats.total_earned }} ₽</div>
+        <div class="stat-label">Всего заработано</div>
+    </div>
+    <div class="card stat-card">
+        <div class="stat-icon">✅</div>
+        <div class="stat-value">{{ stats.total_paid }} ₽</div>
+        <div class="stat-label">Выплачено</div>
+    </div>
+    <div class="card stat-card highlight">
+        <div class="stat-icon">⏳</div>
+        <div class="stat-value">{{ stats.pending }} ₽</div>
+        <div class="stat-label">К выплате</div>
+    </div>
+    <div class="card stat-card">
+        <div class="stat-icon">📅</div>
+        <div class="stat-value">{{ stats.subscriptions_count }}</div>
+        <div class="stat-label">Подписок всего</div>
+    </div>
+</div>
+
+<div class="grid grid-2">
+    <!-- Monthly Breakdown -->
+    <div class="card">
+        <div class="card-header">
+            <h3>📊 Доход по месяцам</h3>
+        </div>
+        <div class="card-content">
+            {% if monthly_breakdown %}
+            <div class="monthly-chart">
+                {% for month, data in monthly_breakdown[:6] %}
+                <div class="month-bar">
+                    <div class="month-label">{{ month }}</div>
+                    <div class="month-bar-container">
+                        {% set max_earnings = (monthly_breakdown | map(attribute='1') | map(attribute='earnings') | max) or 1 %}
+                        <div class="month-bar-fill" style="width: {{ (data.earnings / max_earnings * 100) | int }}%"></div>
+                    </div>
+                    <div class="month-value">{{ "{:,.0f}".format(data.earnings).replace(",", " ") }} ₽</div>
+                    <div class="month-count">{{ data.count }} подп.</div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state-small">
+                <p>Нет данных по доходам</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Pending Payouts -->
+    <div class="card">
+        <div class="card-header">
+            <h3>⏳ Ожидают выплаты</h3>
+        </div>
+        <div class="card-content">
+            {% if pending_payouts %}
+            <div class="payouts-list">
+                {% for payout in pending_payouts %}
+                <div class="payout-item">
+                    <div class="payout-period">
+                        {{ payout.period_start.strftime("%d.%m") }} — {{ payout.period_end.strftime("%d.%m.%Y") }}
+                    </div>
+                    <div class="payout-amount">{{ "{:,.0f}".format(payout.amount).replace(",", " ") }} ₽</div>
+                    <div class="payout-status">
+                        {% if payout.status == "processing" %}
+                        <span class="badge badge-warning">В обработке</span>
+                        {% else %}
+                        <span class="badge badge-info">Ожидает</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state-small">
+                <p>Нет ожидающих выплат</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Tariff Info -->
+<div class="card">
+    <div class="card-header">
+        <h3>💎 Информация о тарифах</h3>
+    </div>
+    <div class="card-content">
+        <div class="tariff-grid">
+            <div class="tariff-item">
+                <div class="tariff-icon">🖥️</div>
+                <div class="tariff-details">
+                    <div class="tariff-title">ТВ агрегатора XK Media</div>
+                    <div class="tariff-desc">Используется оборудование XK Media</div>
+                </div>
+                <div class="tariff-percent">60%</div>
+            </div>
+            <div class="tariff-item highlight">
+                <div class="tariff-icon">📺</div>
+                <div class="tariff-details">
+                    <div class="tariff-title">Своё оборудование</div>
+                    <div class="tariff-desc">Используется ваш ТВ-экран</div>
+                </div>
+                <div class="tariff-percent">70%</div>
+            </div>
+        </div>
+        <p class="tariff-note">
+            Выплаты производятся по итогам отчётного периода (месяц) после получения оплаты от рекламодателей.
+        </p>
+    </div>
+</div>
+
+<!-- Recent Subscriptions -->
+<div class="card">
+    <div class="card-header">
+        <h3>📅 Последние подписки</h3>
+    </div>
+    <div class="card-content">
+        {% if subscriptions %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>ТВ</th>
+                    <th>Рекламодатель</th>
+                    <th>Период</th>
+                    <th>Стоимость</th>
+                    <th>Ваша доля</th>
+                    <th>Статус</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sub in subscriptions %}
+                <tr>
+                    <td>{{ sub.tv.name if sub.tv else "—" }}</td>
+                    <td>{{ sub.advertiser.company_name or sub.advertiser.email if sub.advertiser else "—" }}</td>
+                    <td>{{ sub.start_date.strftime("%d.%m") }} — {{ sub.end_date.strftime("%d.%m.%Y") }}</td>
+                    <td>{{ "{:,.0f}".format(sub.price).replace(",", " ") }} ₽</td>
+                    <td class="amount">{{ "{:,.0f}".format(sub.venue_payout or 0).replace(",", " ") }} ₽</td>
+                    <td>
+                        {% set today = sub.start_date.__class__.today() %}
+                        {% if sub.start_date <= today <= sub.end_date %}
+                        <span class="badge badge-success">Активна</span>
+                        {% elif today < sub.start_date %}
+                        <span class="badge badge-info">Ожидает</span>
+                        {% else %}
+                        <span class="badge badge-secondary">Завершена</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state-small">
+            <p>Нет подписок</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Completed Payouts -->
+<div class="card">
+    <div class="card-header">
+        <h3>✅ История выплат</h3>
+    </div>
+    <div class="card-content">
+        {% if completed_payouts %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Период</th>
+                    <th>Сумма</th>
+                    <th>Дата выплаты</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for payout in completed_payouts %}
+                <tr>
+                    <td>{{ payout.period_start.strftime("%d.%m") }} — {{ payout.period_end.strftime("%d.%m.%Y") }}</td>
+                    <td class="amount">{{ "{:,.0f}".format(payout.amount).replace(",", " ") }} ₽</td>
+                    <td>{{ payout.paid_at.strftime("%d.%m.%Y") if payout.paid_at else "—" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state-small">
+            <p>История выплат пуста</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.monthly-chart {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.month-bar {
+    display: grid;
+    grid-template-columns: 80px 1fr 100px 60px;
+    gap: 1rem;
+    align-items: center;
+}
+
+.month-label {
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.month-bar-container {
+    height: 24px;
+    background: var(--bg-secondary);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.month-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent) 0%, #ff6b8a 100%);
+    border-radius: 4px;
+    min-width: 4px;
+}
+
+.month-value {
+    font-weight: 600;
+    text-align: right;
+}
+
+.month-count {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.payouts-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.payout-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+}
+
+.payout-period {
+    flex: 1;
+}
+
+.payout-amount {
+    font-weight: 700;
+    font-size: 1.1rem;
+}
+
+.tariff-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.tariff-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+}
+
+.tariff-item.highlight {
+    border-color: var(--accent);
+    background: rgba(233, 69, 96, 0.05);
+}
+
+.tariff-icon {
+    font-size: 2rem;
+}
+
+.tariff-details {
+    flex: 1;
+}
+
+.tariff-title {
+    font-weight: 600;
+}
+
+.tariff-desc {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.tariff-percent {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--accent);
+}
+
+.tariff-note {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+@media (max-width: 768px) {
+    .month-bar {
+        grid-template-columns: 60px 1fr 80px;
+    }
+    
+    .month-count {
+        display: none;
+    }
+    
+    .tariff-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}

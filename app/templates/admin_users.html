@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}Пользователи — Админ{% endblock %}
+
+{% block logo %}
+<a href="/admin" class="logo">
+    <span class="logo-icon">📺</span>
+    XK Media
+</a>
+{% endblock %}
+
+{% block nav %}
+<a href="/admin">Дашборд</a>
+<a href="/admin/users" class="active">Пользователи</a>
+<a href="/admin/tvs">Экраны</a>
+<a href="/admin/payments">Платежи</a>
+<a href="/admin/payouts">Выплаты</a>
+<a href="/admin/settings">Настройки</a>
+<a href="/logout" class="btn btn-secondary btn-sm">Выйти</a>
+{% endblock %}
+
+{% block content %}
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: center;">
+    <div>
+        <h1 class="page-title">👥 Пользователи</h1>
+        <p class="page-subtitle">Управление рекламодателями и площадками</p>
+    </div>
+    <a href="/admin/advertisers/add" class="btn btn-primary">+ Добавить рекламодателя</a>
+</div>
+
+<!-- Фильтры -->
+<div class="card" style="margin-bottom: 1.5rem;">
+    <div style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;">
+        <a href="/admin/users" class="btn {% if not role_filter %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">Все</a>
+        <a href="/admin/users?role=advertiser" class="btn {% if role_filter == 'advertiser' %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">Рекламодатели</a>
+        <a href="/admin/users?role=venue" class="btn {% if role_filter == 'venue' %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">Площадки</a>
+        <div style="flex: 1;"></div>
+        <span style="color: var(--text-muted);">Всего: {{ users|length }}</span>
+    </div>
+</div>
+
+<!-- Таблица пользователей -->
+<div class="card">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Пользователь</th>
+                <th>Компания</th>
+                <th>Роль</th>
+                <th>Баланс</th>
+                <th>Статус</th>
+                <th>Регистрация</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for u in users %}
+            <tr>
+                <td>#{{ u.id }}</td>
+                <td>
+                    <div style="font-weight: 600;">{{ u.first_name or '' }} {{ u.last_name or '' }}</div>
+                    <div style="font-size: 0.875rem; color: var(--text-muted);">{{ u.email }}</div>
+                    {% if u.phone %}
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">{{ u.phone }}</div>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if u.company_name %}
+                    <div>{{ u.company_name }}</div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">ИНН: {{ u.inn or '—' }}</div>
+                    {% else %}
+                    <span style="color: var(--text-muted);">—</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if u.role == 'admin' %}
+                    <span class="badge badge-danger">Админ</span>
+                    {% elif u.role == 'advertiser' %}
+                    <span class="badge badge-info">Рекламодатель</span>
+                    {% else %}
+                    <span class="badge badge-warning">Площадка</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if u.role == 'advertiser' %}
+                    <span style="font-weight: 600;">{{ "%.0f"|format(u.balance or 0) }} ₽</span>
+                    {% else %}
+                    —
+                    {% endif %}
+                </td>
+                <td>
+                    {% if u.is_active %}
+                    <span class="badge badge-success">Активен</span>
+                    {% else %}
+                    <span class="badge badge-danger">Заблокирован</span>
+                    {% endif %}
+                    {% if u.is_verified %}
+                    <span class="badge badge-info" style="margin-left: 0.25rem;">✓</span>
+                    {% endif %}
+                </td>
+                <td style="font-size: 0.875rem; color: var(--text-muted);">
+                    {{ u.created_at.strftime('%d.%m.%Y') }}
+                </td>
+                <td>
+                    <a href="/admin/user/{{ u.id }}" class="btn btn-secondary btn-sm">Открыть</a>
+                </td>
+            </tr>
+            {% endfor %}
+            {% if not users %}
+            <tr>
+                <td colspan="8" style="text-align: center; padding: 3rem; color: var(--text-muted);">
+                    Пользователи не найдены
+                </td>
+            </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
