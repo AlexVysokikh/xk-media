@@ -131,7 +131,7 @@
                             <input type="password" id="yandex_client_secret" name="yandex_client_secret" value="{{ settings.YANDEX_CLIENT_SECRET or '' }}" placeholder="xxxxxxxxxxxxxxxxxxxxxxxx">
                         </div>
                         <div class="form-hint">
-                            <strong>Redirect URI:</strong> <code id="yandex-redirect">{{ settings.BASE_URL.rstrip('/') }}/oauth/yandex/callback</code><br>
+                            <strong>Redirect URI:</strong> <code id="yandex-redirect">{{ settings.BASE_URL.rstrip('/') }}/auth/oauth/yandex/callback</code><br>
                             <a href="https://oauth.yandex.ru/" target="_blank">Создать OAuth приложение →</a>
                         </div>
                     </div>
@@ -176,7 +176,7 @@
 document.getElementById('base_url')?.addEventListener('input', function() {
     const baseUrl = this.value.trim().replace(/\/$/, '');
     if (baseUrl) {
-        document.getElementById('yandex-redirect').textContent = baseUrl + '/oauth/yandex/callback';
+        document.getElementById('yandex-redirect').textContent = baseUrl + '/auth/oauth/yandex/callback';
     }
 });
 

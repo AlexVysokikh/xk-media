@@ -70,24 +70,44 @@ async def yandex_oauth_start(role: str = Query("advertiser", description="Рол
 
 @router.get("/yandex/callback")
 async def yandex_oauth_callback(
-    code: str = Query(...),
-    state: str = Query(...),
+    code: str = Query(None),
+    state: str = Query(None),
+    error: str = Query(None),
+    error_description: str = Query(None),
     db: Session = Depends(get_db),
 ):
     """Обработка callback от Yandex OAuth."""
+    # Проверяем, есть ли ошибка от Yandex
+    if error:
+        error_msg = error_description or error
+        print(f"Yandex OAuth error: {error} - {error_msg}")
+        return RedirectResponse(url=f"/login?error=oauth_failed&details={error}", status_code=303)
+    
+    # Проверяем наличие обязательных параметров
+    if not code or not state:
+        print(f"Yandex OAuth callback missing parameters: code={code}, state={state}")
+        return RedirectResponse(url="/login?error=oauth_invalid", status_code=303)
+    
     if state not in oauth_states:
+        print(f"Yandex OAuth invalid state: {state}")
         return RedirectResponse(url="/login?error=oauth_invalid", status_code=303)
     
     state_data = oauth_states.pop(state)
     role = state_data.get("role", Role.ADVERTISER)
     
-    token_data = await OAuthService.get_yandex_token(code)
-    if not token_data or "access_token" not in token_data:
+    try:
+        token_data = await OAuthService.get_yandex_token(code)
+        if not token_data or "access_token" not in token_data:
+            print(f"Yandex OAuth token error: {token_data}")
+            return RedirectResponse(url="/login?error=oauth_failed", status_code=303)
+        
+        user_info = await OAuthService.get_yandex_user_info(token_data["access_token"])
+        if not user_info or "default_email" not in user_info:
+            print(f"Yandex OAuth user info error: {user_info}")
+            return RedirectResponse(url="/login?error=oauth_no_email", status_code=303)
+    except Exception as e:
+        print(f"Yandex OAuth callback exception: {e}")
         return RedirectResponse(url="/login?error=oauth_failed", status_code=303)
-    
-    user_info = await OAuthService.get_yandex_user_info(token_data["access_token"])
-    if not user_info or "default_email" not in user_info:
-        return RedirectResponse(url="/login?error=oauth_no_email", status_code=303)
     
     email = user_info["default_email"].lower().strip()
     first_name = user_info.get("first_name")

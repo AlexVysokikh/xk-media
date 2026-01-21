@@ -58,6 +58,12 @@ class OAuthService:
                     error_text = response.text
                     print(f"Yandex token error {response.status_code}: {error_text}")
                     print(f"Redirect URI used: {redirect_uri}")
+                    print(f"Client ID: {settings.YANDEX_CLIENT_ID[:10]}...")
+                    try:
+                        error_json = response.json()
+                        print(f"Error details: {error_json}")
+                    except:
+                        pass
                     return None
                 return response.json()
             except httpx.HTTPStatusError as e:
@@ -67,6 +73,8 @@ class OAuthService:
                 return None
             except Exception as e:
                 print(f"Yandex token error: {e}")
+                import traceback
+                traceback.print_exc()
                 return None
     
     @staticmethod
