@@ -1,0 +1,406 @@
+{% extends "base.html" %}
+
+{% block title %}{{ tv.name }} — XK Media{% endblock %}
+
+{% block logo %}
+<a href="/venue" class="logo">
+    <span class="logo-icon">📺</span>
+    XK Media
+</a>
+{% endblock %}
+
+{% block nav %}
+<a href="/venue">Обзор</a>
+<a href="/venue/tvs">Мои ТВ</a>
+<a href="/venue/earnings">Доходы</a>
+<a href="/venue/profile">Профиль</a>
+<a href="/logout" class="btn btn-secondary btn-sm">Выйти</a>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <div>
+        <a href="/venue/tvs" class="back-link">← Назад к списку</a>
+        <h1>📺 {{ tv.name }}</h1>
+        <p class="subtitle">{{ tv.venue_name or tv.address or "—" }}</p>
+    </div>
+    <div class="header-actions">
+        <a href="/tv/{{ tv.code }}" class="btn btn-outline" target="_blank">QR-страница ↗</a>
+        {% if tv.is_approved %}
+        <span class="badge badge-success badge-lg">Активен</span>
+        {% else %}
+        <span class="badge badge-warning badge-lg">На модерации</span>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Stats -->
+<div class="grid grid-4">
+    <div class="card stat-card">
+        <div class="stat-icon">👁️</div>
+        <div class="stat-value">{{ "{:,}".format(total_impressions).replace(",", " ") }}</div>
+        <div class="stat-label">Показов</div>
+    </div>
+    <div class="card stat-card">
+        <div class="stat-icon">👆</div>
+        <div class="stat-value">{{ total_clicks }}</div>
+        <div class="stat-label">Переходов</div>
+    </div>
+    <div class="card stat-card">
+        <div class="stat-icon">📢</div>
+        <div class="stat-value">{{ active_subs_count }}</div>
+        <div class="stat-label">Активных подписок</div>
+    </div>
+    <div class="card stat-card highlight">
+        <div class="stat-icon">💰</div>
+        <div class="stat-value">{{ total_earned }} ₽</div>
+        <div class="stat-label">Заработано</div>
+    </div>
+</div>
+
+<div class="grid grid-2">
+    <!-- TV Info Form -->
+    <div class="card">
+        <div class="card-header">
+            <h3>📋 Информация о ТВ</h3>
+        </div>
+        <div class="card-content">
+            <form method="POST" action="/venue/tv/{{ tv.id }}">
+                <div class="form-group">
+                    <label for="name">Название ТВ</label>
+                    <input type="text" id="name" name="name" value="{{ tv.name }}" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="venue_name">Название заведения</label>
+                    <input type="text" id="venue_name" name="venue_name" value="{{ tv.venue_name or '' }}">
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="category">Категория</label>
+                        <select id="category" name="category">
+                            {% for key, value in categories.items() %}
+                            <option value="{{ key }}" {{ 'selected' if tv.category == key else '' }}>{{ value }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="target_audience">Целевая аудитория</label>
+                        <select id="target_audience" name="target_audience">
+                            {% for key, value in audiences.items() %}
+                            <option value="{{ key }}" {{ 'selected' if tv.target_audience == key else '' }}>{{ value }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="city">Город</label>
+                        <input type="text" id="city" name="city" value="{{ tv.city or '' }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="address">Адрес</label>
+                        <input type="text" id="address" name="address" value="{{ tv.address or '' }}">
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="clients_per_day">Клиентов в день</label>
+                        <input type="number" id="clients_per_day" name="clients_per_day" value="{{ tv.clients_per_day or 0 }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="avg_check">Средний чек, ₽</label>
+                        <input type="number" id="avg_check" name="avg_check" step="0.01" value="{{ tv.avg_check or 0 }}">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="working_hours">Часы работы</label>
+                    <input type="text" id="working_hours" name="working_hours" value="{{ tv.working_hours or '' }}">
+                </div>
+                
+                <div class="form-group">
+                    <label for="description">Описание</label>
+                    <textarea id="description" name="description" rows="3">{{ tv.description or '' }}</textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="photo_url">Фото (URL)</label>
+                    <input type="url" id="photo_url" name="photo_url" value="{{ tv.photo_url or '' }}">
+                </div>
+                
+                <button type="submit" class="btn btn-primary">Сохранить</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Legal Info Form -->
+    <div class="card">
+        <div class="card-header">
+            <h3>📄 Юридические данные</h3>
+            <span class="badge badge-info">Для выплат</span>
+        </div>
+        <div class="card-content">
+            <form method="POST" action="/venue/tv/{{ tv.id }}/legal">
+                <div class="form-group">
+                    <label for="legal_name">Юридическое название</label>
+                    <input type="text" id="legal_name" name="legal_name" value="{{ tv.legal_name or '' }}">
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="inn">ИНН</label>
+                        <input type="text" id="inn" name="inn" value="{{ tv.inn or '' }}" maxlength="12">
+                    </div>
+                    <div class="form-group">
+                        <label for="kpp">КПП</label>
+                        <input type="text" id="kpp" name="kpp" value="{{ tv.kpp or '' }}" maxlength="9">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="bank_name">Название банка</label>
+                    <input type="text" id="bank_name" name="bank_name" value="{{ tv.bank_name or '' }}">
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="bank_bik">БИК</label>
+                        <input type="text" id="bank_bik" name="bank_bik" value="{{ tv.bank_bik or '' }}" maxlength="9">
+                    </div>
+                    <div class="form-group">
+                        <label for="bank_account">Расчётный счёт</label>
+                        <input type="text" id="bank_account" name="bank_account" value="{{ tv.bank_account or '' }}" maxlength="20">
+                    </div>
+                </div>
+                
+                <hr class="divider">
+                
+                <div class="form-group">
+                    <label for="contact_person">Контактное лицо</label>
+                    <input type="text" id="contact_person" name="contact_person" value="{{ tv.contact_person or '' }}">
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="contact_phone">Телефон</label>
+                        <input type="tel" id="contact_phone" name="contact_phone" value="{{ tv.contact_phone or '' }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="contact_email">Email</label>
+                        <input type="email" id="contact_email" name="contact_email" value="{{ tv.contact_email or '' }}">
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">Сохранить</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Tariff Info -->
+<div class="card">
+    <div class="card-header">
+        <h3>💎 Тариф</h3>
+    </div>
+    <div class="card-content">
+        <div class="tariff-info">
+            <div class="tariff-current">
+                <div class="tariff-type">
+                    {% if tv.equipment_type == 'venue' %}
+                    📺 Собственное оборудование
+                    {% else %}
+                    🖥️ ТВ агрегатора XK Media
+                    {% endif %}
+                </div>
+                <div class="tariff-share">
+                    Ваша доля: <span class="accent">{{ tv.revenue_share | int }}%</span>
+                </div>
+            </div>
+            <p class="tariff-note">
+                Для изменения типа оборудования обратитесь в поддержку: <a href="mailto:support@xk-media.ru">support@xk-media.ru</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- Advertisers on this TV -->
+<div class="card">
+    <div class="card-header">
+        <h3>📢 Рекламодатели на этом ТВ</h3>
+    </div>
+    <div class="card-content">
+        {% if links %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Рекламодатель</th>
+                    <th>Реклама</th>
+                    <th>Показы</th>
+                    <th>Переходы</th>
+                    <th>Статус</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for link in links %}
+                <tr>
+                    <td>
+                        <strong>{{ link.advertiser_name or "—" }}</strong>
+                        {% if link.advertiser and link.advertiser.website %}
+                        <br><a href="{{ link.advertiser.website }}" target="_blank" class="link-small">{{ link.advertiser.website }}</a>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <strong>{{ link.title }}</strong>
+                        <br><span class="text-secondary">{{ link.description or "—" }}</span>
+                    </td>
+                    <td>{{ "{:,}".format(link.impressions or 0).replace(",", " ") }}</td>
+                    <td>{{ link.clicks or 0 }}</td>
+                    <td>
+                        <span class="badge {{ 'badge-success' if link.is_active else 'badge-secondary' }}">
+                            {{ "Активна" if link.is_active else "Неактивна" }}
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state-small">
+            <p>Пока нет рекламодателей на этом ТВ</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Subscriptions -->
+<div class="card">
+    <div class="card-header">
+        <h3>📅 История подписок</h3>
+    </div>
+    <div class="card-content">
+        {% if subscriptions %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Рекламодатель</th>
+                    <th>Период</th>
+                    <th>Стоимость</th>
+                    <th>Ваша доля</th>
+                    <th>Статус</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for sub in subscriptions %}
+                <tr>
+                    <td>{{ sub.advertiser.company_name or sub.advertiser.email if sub.advertiser else "—" }}</td>
+                    <td>{{ sub.start_date.strftime("%d.%m") }} — {{ sub.end_date.strftime("%d.%m.%Y") }}</td>
+                    <td>{{ "{:,.0f}".format(sub.price).replace(",", " ") }} ₽</td>
+                    <td class="amount">{{ "{:,.0f}".format(sub.venue_payout or 0).replace(",", " ") }} ₽</td>
+                    <td>
+                        {% set today = sub.start_date.__class__.today() %}
+                        {% if sub.start_date <= today <= sub.end_date %}
+                        <span class="badge badge-success">Активна</span>
+                        {% elif today < sub.start_date %}
+                        <span class="badge badge-info">Ожидает</span>
+                        {% else %}
+                        <span class="badge badge-secondary">Завершена</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state-small">
+            <p>История подписок пуста</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.form-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+@media (max-width: 768px) {
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+.tariff-info {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.tariff-current {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+}
+
+.tariff-type {
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.tariff-share {
+    font-size: 1.1rem;
+}
+
+.tariff-share .accent {
+    font-weight: 700;
+    font-size: 1.5rem;
+    color: var(--accent);
+}
+
+.tariff-note {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.badge-lg {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+}
+
+.back-link {
+    display: inline-block;
+    color: var(--text-secondary);
+    text-decoration: none;
+    margin-bottom: 0.5rem;
+}
+
+.back-link:hover {
+    color: var(--accent);
+}
+
+.divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 1.5rem 0;
+}
+
+.link-small {
+    font-size: 0.85rem;
+    color: var(--accent);
+}
+</style>
+{% endblock %}

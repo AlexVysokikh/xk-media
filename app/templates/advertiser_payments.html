@@ -1,0 +1,309 @@
+{% extends "base.html" %}
+
+{% block title %}Платежи — XK Media{% endblock %}
+
+{% block head %}
+<style>
+    .balance-hero {
+        background: linear-gradient(135deg, var(--accent), #ff6b6b);
+        border-radius: 16px;
+        padding: 2rem;
+        text-align: center;
+        margin-bottom: 1.5rem;
+        color: white;
+    }
+    .balance-hero .amount {
+        font-size: 3rem;
+        font-weight: 700;
+    }
+    .balance-hero .label {
+        font-size: 0.9rem;
+        opacity: 0.9;
+    }
+    .stats-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    .stat-mini {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 1rem;
+        text-align: center;
+    }
+    .stat-mini .value {
+        font-size: 1.5rem;
+        font-weight: 700;
+    }
+    .stat-mini .label {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+    }
+    .amount-buttons {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+    }
+    .amount-btn {
+        padding: 0.75rem 1.25rem;
+        background: var(--secondary);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        color: var(--text);
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .amount-btn:hover {
+        border-color: var(--accent);
+        background: rgba(233, 69, 96, 0.1);
+    }
+    .payment-card {
+        background: var(--secondary);
+        border-radius: 10px;
+        padding: 1rem 1.25rem;
+        margin-bottom: 0.5rem;
+        display: grid;
+        grid-template-columns: auto 1fr auto auto;
+        gap: 1rem;
+        align-items: center;
+    }
+    .payment-status {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+    }
+    .payment-status.success {
+        background: rgba(0, 210, 106, 0.15);
+    }
+    .payment-status.pending {
+        background: rgba(255, 193, 7, 0.15);
+    }
+    .payment-status.failed {
+        background: rgba(233, 69, 96, 0.15);
+    }
+    .payment-info .amount {
+        font-weight: 700;
+        font-size: 1.1rem;
+    }
+    .payment-info .desc {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+    }
+    .payment-date {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+        text-align: right;
+    }
+    @media (max-width: 768px) {
+        .stats-row {
+            grid-template-columns: 1fr;
+        }
+        .payment-card {
+            grid-template-columns: auto 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block logo %}
+<a href="/advertiser" class="logo">
+    <span class="logo-icon">📺</span>
+    XK Media
+</a>
+{% endblock %}
+
+{% block nav %}
+<a href="/advertiser">Дашборд</a>
+<a href="/advertiser/stats">Статистика</a>
+<a href="/advertiser/subscriptions">Подписки</a>
+<a href="/advertiser/payments" class="active">Платежи</a>
+<a href="/advertiser/profile">Профиль</a>
+<a href="/logout" class="btn btn-secondary btn-sm">Выйти</a>
+{% endblock %}
+
+{% block content %}
+<div class="page-header" style="margin-bottom: 1.5rem;">
+    <h1 class="page-title">💳 Платежи и баланс</h1>
+    <p class="page-subtitle">Пополнение баланса и история операций</p>
+</div>
+
+{% if warning %}
+<div class="alert alert-error">{{ warning }}</div>
+{% endif %}
+
+{% if success %}
+<div class="alert alert-success">{{ success }}</div>
+{% endif %}
+
+<!-- Баланс -->
+<div class="balance-hero">
+    <div class="label">Текущий баланс</div>
+    <div class="amount">{{ balance }} ₽</div>
+</div>
+
+<!-- Статистика -->
+<div class="stats-row">
+    <div class="stat-mini">
+        <div class="value" style="color: var(--success);">{{ stats.total_paid }} ₽</div>
+        <div class="label">Всего пополнено</div>
+    </div>
+    <div class="stat-mini">
+        <div class="value" style="color: var(--accent);">{{ stats.total_spent }} ₽</div>
+        <div class="label">Потрачено на рекламу</div>
+    </div>
+    <div class="stat-mini">
+        <div class="value">{{ stats.payments_count }}</div>
+        <div class="label">Операций</div>
+    </div>
+</div>
+
+<div class="grid grid-2">
+    <!-- Пополнение -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">➕ Пополнить баланс</h3>
+        </div>
+        
+        <form method="POST" action="/advertiser/payments/create-page">
+            <div class="form-group">
+                <label class="form-label">Сумма пополнения</label>
+                <input type="number" name="amount" id="amount_input" class="form-input" min="100" step="100" value="5000" required style="font-size: 1.5rem; font-weight: 600; text-align: center;">
+            </div>
+            
+            <div class="amount-buttons">
+                <button type="button" onclick="setAmount(1000)" class="amount-btn">1 000 ₽</button>
+                <button type="button" onclick="setAmount(3000)" class="amount-btn">3 000 ₽</button>
+                <button type="button" onclick="setAmount(5000)" class="amount-btn">5 000 ₽</button>
+                <button type="button" onclick="setAmount(10000)" class="amount-btn">10 000 ₽</button>
+                <button type="button" onclick="setAmount(25000)" class="amount-btn">25 000 ₽</button>
+            </div>
+            
+            <input type="hidden" name="purpose" value="Пополнение баланса">
+            
+            <button type="submit" class="btn btn-primary btn-lg" style="width: 100%; margin-top: 1rem;">
+                💳 Перейти к оплате
+            </button>
+            
+            <p style="font-size: 0.75rem; color: var(--text-muted); text-align: center; margin-top: 1rem;">
+                Принимаем карты Visa, MasterCard, МИР
+            </p>
+        </form>
+        
+        <!-- Рекомендации -->
+        <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border);">
+            <div style="font-weight: 600; margin-bottom: 0.75rem;">💡 Рекомендуемые суммы</div>
+            <div style="display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.9rem;">
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="color: var(--text-muted);">1 ТВ на неделю</span>
+                    <span style="font-weight: 600;">3 500 ₽</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="color: var(--text-muted);">1 ТВ на месяц</span>
+                    <span style="font-weight: 600;">15 000 ₽</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span style="color: var(--text-muted);">3 ТВ на месяц</span>
+                    <span style="font-weight: 600;">45 000 ₽</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- История платежей -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">📜 История платежей</h3>
+        </div>
+        
+        {% if payments %}
+        <div style="max-height: 500px; overflow-y: auto;">
+            {% for p in payments %}
+            <div class="payment-card">
+                <div class="payment-status {% if p.status == 'succeeded' %}success{% elif p.status in ['pending', 'waiting'] %}pending{% else %}failed{% endif %}">
+                    {% if p.status == 'succeeded' %}✓{% elif p.status in ['pending', 'waiting'] %}⏳{% else %}✗{% endif %}
+                </div>
+                <div class="payment-info">
+                    <div class="amount">+{{ "%.0f"|format(p.amount) }} ₽</div>
+                    <div class="desc">{{ p.description or 'Пополнение баланса' }}</div>
+                </div>
+                <div class="payment-date">
+                    <div>{{ p.created_at.strftime('%d.%m.%Y') }}</div>
+                    <div style="font-size: 0.75rem;">{{ p.created_at.strftime('%H:%M') }}</div>
+                </div>
+                <div>
+                    {% if p.status == 'succeeded' %}
+                    <span class="badge badge-success">Оплачен</span>
+                    {% elif p.status == 'pending' %}
+                    <span class="badge badge-warning">Создан</span>
+                    {% elif p.status == 'waiting' %}
+                    <span class="badge badge-warning">Ожидание</span>
+                    {% else %}
+                    <span class="badge badge-danger">Отменён</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Итого -->
+        <div style="margin-top: 1rem; padding-top: 1rem; border-top: 2px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <div style="font-size: 0.85rem; color: var(--text-muted);">Успешных платежей: {{ stats.success_count }}</div>
+            </div>
+            <div style="text-align: right;">
+                <div style="font-size: 0.85rem; color: var(--text-muted);">Итого пополнено:</div>
+                <div style="font-size: 1.5rem; font-weight: 700; color: var(--success);">{{ stats.total_paid }} ₽</div>
+            </div>
+        </div>
+        
+        {% else %}
+        <div style="text-align: center; padding: 3rem; color: var(--text-muted);">
+            <div style="font-size: 3rem; margin-bottom: 1rem;">💳</div>
+            <p style="font-size: 1rem; margin-bottom: 0.5rem;">Платежей пока нет</p>
+            <p style="font-size: 0.85rem;">Пополните баланс для оформления размещений</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Как работает -->
+<div class="card" style="margin-top: 1.5rem; background: var(--secondary);">
+    <div style="font-weight: 600; margin-bottom: 1rem;">ℹ️ Как работает авансовый баланс</div>
+    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; text-align: center;">
+        <div>
+            <div style="font-size: 2rem; margin-bottom: 0.5rem;">1️⃣</div>
+            <div style="font-weight: 600; margin-bottom: 0.25rem;">Пополните</div>
+            <div style="font-size: 0.8rem; color: var(--text-muted);">Внесите аванс любой суммой</div>
+        </div>
+        <div>
+            <div style="font-size: 2rem; margin-bottom: 0.5rem;">2️⃣</div>
+            <div style="font-weight: 600; margin-bottom: 0.25rem;">Выберите ТВ</div>
+            <div style="font-size: 0.8rem; color: var(--text-muted);">Выберите экраны и сроки</div>
+        </div>
+        <div>
+            <div style="font-size: 2rem; margin-bottom: 0.5rem;">3️⃣</div>
+            <div style="font-weight: 600; margin-bottom: 0.25rem;">Оформите</div>
+            <div style="font-size: 0.8rem; color: var(--text-muted);">Средства спишутся с баланса</div>
+        </div>
+        <div>
+            <div style="font-size: 2rem; margin-bottom: 0.5rem;">4️⃣</div>
+            <div style="font-weight: 600; margin-bottom: 0.25rem;">Следите</div>
+            <div style="font-size: 0.8rem; color: var(--text-muted);">Отслеживайте статистику</div>
+        </div>
+    </div>
+</div>
+
+<script>
+function setAmount(amount) {
+    document.getElementById('amount_input').value = amount;
+}
+</script>
+{% endblock %}

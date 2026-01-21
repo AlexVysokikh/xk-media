@@ -1,0 +1,232 @@
+{% extends "base.html" %}
+
+{% block title %}ТВ-экраны — Админ{% endblock %}
+
+{% block logo %}
+<a href="/admin" class="logo">
+    <span class="logo-icon">📺</span>
+    XK Media
+</a>
+{% endblock %}
+
+{% block nav %}
+<a href="/admin">Дашборд</a>
+<a href="/admin/users">Пользователи</a>
+<a href="/admin/tvs" class="active">Экраны</a>
+<a href="/admin/payments">Платежи</a>
+<a href="/admin/payouts">Выплаты</a>
+<a href="/admin/settings">Настройки</a>
+<a href="/logout" class="btn btn-secondary btn-sm">Выйти</a>
+{% endblock %}
+
+{% block content %}
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: center;">
+    <div>
+        <h1 class="page-title">📺 ТВ-экраны</h1>
+        <p class="page-subtitle">Управление digital-точками размещения</p>
+    </div>
+    <button onclick="document.getElementById('addTvModal').style.display='flex'" class="btn btn-primary">
+        + Добавить ТВ
+    </button>
+</div>
+
+<!-- Статистика -->
+<div class="grid grid-3" style="margin-bottom: 1.5rem;">
+    <div class="card stat-card">
+        <div class="stat-value">{{ tvs|length }}</div>
+        <div class="stat-label">Всего экранов</div>
+    </div>
+    <div class="card stat-card">
+        <div class="stat-value">{{ tvs|selectattr('is_active')|list|length }}</div>
+        <div class="stat-label">Активных</div>
+    </div>
+    <div class="card stat-card">
+        <div class="stat-value">{{ tvs|rejectattr('is_active')|list|length }}</div>
+        <div class="stat-label">Неактивных</div>
+    </div>
+</div>
+
+<!-- Таблица ТВ -->
+<div class="card">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Код</th>
+                <th>Название / Место</th>
+                <th>Категория</th>
+                <th>Адрес</th>
+                <th>Юр. лицо</th>
+                <th>Ссылки</th>
+                <th>Статус</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for tv in tvs %}
+            <tr>
+                <td>
+                    <code style="background: var(--secondary); padding: 0.25rem 0.5rem; border-radius: 4px;">{{ tv.code }}</code>
+                </td>
+                <td>
+                    <div style="font-weight: 600;">{{ tv.name }}</div>
+                    {% if tv.venue_name %}
+                    <div style="font-size: 0.875rem; color: var(--text-muted);">{{ tv.venue_name }}</div>
+                    {% endif %}
+                </td>
+                <td>
+                    <span class="badge badge-info">{{ categories.get(tv.category, tv.category) }}</span>
+                </td>
+                <td style="max-width: 200px;">
+                    <div style="font-size: 0.875rem;">{{ tv.city or '' }}</div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">{{ tv.address or '—' }}</div>
+                </td>
+                <td style="font-size: 0.875rem;">
+                    {% if tv.legal_name %}
+                    <div>{{ tv.legal_name }}</div>
+                    <div style="color: var(--text-muted);">ИНН: {{ tv.inn or '—' }}</div>
+                    {% else %}
+                    <span style="color: var(--text-muted);">—</span>
+                    {% endif %}
+                </td>
+                <td style="text-align: center;">
+                    <span style="font-weight: 600;">{{ tv.links_count }}</span>
+                </td>
+                <td>
+                    {% if tv.is_active %}
+                    <span class="badge badge-success">Активен</span>
+                    {% else %}
+                    <span class="badge badge-danger">Неактивен</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <a href="/admin/tv/{{ tv.code }}" class="btn btn-secondary btn-sm">Открыть</a>
+                        <a href="/admin/tv/{{ tv.code }}/delete" class="btn btn-secondary btn-sm" 
+                           style="color: var(--accent);"
+                           onclick="return confirm('Удалить ТВ «{{ tv.name }}»? Это действие нельзя отменить.')">
+                            🗑
+                        </a>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+            {% if not tvs %}
+            <tr>
+                <td colspan="8" style="text-align: center; padding: 3rem; color: var(--text-muted);">
+                    ТВ-экраны не найдены. <a href="#" onclick="document.getElementById('addTvModal').style.display='flex'">Добавить первый</a>
+                </td>
+            </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Модальное окно добавления ТВ -->
+<div id="addTvModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1000; align-items: center; justify-content: center; padding: 2rem;">
+    <div class="card" style="max-width: 600px; width: 100%; max-height: 90vh; overflow-y: auto;">
+        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <h3 class="card-title">➕ Добавить новый ТВ</h3>
+            <button onclick="document.getElementById('addTvModal').style.display='none'" 
+                    style="background: none; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer;">
+                ×
+            </button>
+        </div>
+        
+        <form method="POST" action="/admin/tvs/add">
+            <!-- Основное -->
+            <h4 style="margin: 1rem 0 0.75rem; color: var(--text-muted); font-size: 0.875rem;">ОСНОВНОЕ</h4>
+            <div class="grid grid-2">
+                <div class="form-group">
+                    <label class="form-label">Код ТВ *</label>
+                    <input type="text" name="code" class="form-input" placeholder="tv001" required pattern="[a-zA-Z0-9_-]+">
+                    <small style="color: var(--text-muted);">Латиница, цифры, без пробелов</small>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Название ТВ *</label>
+                    <input type="text" name="name" class="form-input" placeholder="ТВ #1 у входа" required>
+                </div>
+            </div>
+            
+            <!-- Место -->
+            <h4 style="margin: 1rem 0 0.75rem; color: var(--text-muted); font-size: 0.875rem;">МЕСТО РАЗМЕЩЕНИЯ</h4>
+            <div class="form-group">
+                <label class="form-label">Название заведения</label>
+                <input type="text" name="venue_name" class="form-input" placeholder="Кофейня «Рассвет»">
+            </div>
+            <div class="grid grid-2">
+                <div class="form-group">
+                    <label class="form-label">Категория</label>
+                    <select name="category" class="form-input">
+                        {% for key, val in categories.items() %}
+                        <option value="{{ key }}">{{ val }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Целевая аудитория</label>
+                    <select name="target_audience" class="form-input">
+                        {% for key, val in audiences.items() %}
+                        <option value="{{ key }}">{{ val }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <!-- Адрес -->
+            <h4 style="margin: 1rem 0 0.75rem; color: var(--text-muted); font-size: 0.875rem;">АДРЕС</h4>
+            <div class="form-group">
+                <label class="form-label">Город</label>
+                <input type="text" name="city" class="form-input" placeholder="Москва">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Полный адрес</label>
+                <input type="text" name="address" class="form-input" placeholder="ул. Тверская, д. 1">
+            </div>
+            
+            <!-- Юр. лицо -->
+            <h4 style="margin: 1rem 0 0.75rem; color: var(--text-muted); font-size: 0.875rem;">ЮРИДИЧЕСКОЕ ЛИЦО</h4>
+            <div class="form-group">
+                <label class="form-label">Название организации</label>
+                <input type="text" name="legal_name" class="form-input" placeholder="ООО «Рассвет»">
+            </div>
+            <div class="grid grid-2">
+                <div class="form-group">
+                    <label class="form-label">ИНН</label>
+                    <input type="text" name="inn" class="form-input" placeholder="1234567890" maxlength="12">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">% выплаты площадке</label>
+                    <input type="number" name="revenue_share" class="form-input" value="30" min="0" max="100" step="1">
+                </div>
+            </div>
+            
+            <!-- Контакты -->
+            <h4 style="margin: 1rem 0 0.75rem; color: var(--text-muted); font-size: 0.875rem;">КОНТАКТЫ</h4>
+            <div class="form-group">
+                <label class="form-label">Контактное лицо</label>
+                <input type="text" name="contact_person" class="form-input" placeholder="Иванов Иван Иванович">
+            </div>
+            <div class="grid grid-2">
+                <div class="form-group">
+                    <label class="form-label">Телефон</label>
+                    <input type="tel" name="contact_phone" class="form-input" placeholder="+7 999 123-45-67">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" name="contact_email" class="form-input" placeholder="contact@venue.ru">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Описание</label>
+                <textarea name="description" class="form-input" rows="2" placeholder="Дополнительная информация о ТВ..."></textarea>
+            </div>
+            
+            <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                <button type="submit" class="btn btn-primary">Создать ТВ</button>
+                <button type="button" onclick="document.getElementById('addTvModal').style.display='none'" class="btn btn-secondary">Отмена</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

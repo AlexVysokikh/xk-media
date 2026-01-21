@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block title %}Добавить рекламодателя — Админ{% endblock %}
+
+{% block logo %}
+<a href="/admin" class="logo">
+    <span class="logo-icon">📺</span>
+    XK Media
+</a>
+{% endblock %}
+
+{% block nav %}
+<a href="/admin">Дашборд</a>
+<a href="/admin/users" class="active">Пользователи</a>
+<a href="/admin/tvs">Экраны</a>
+<a href="/admin/payments">Платежи</a>
+<a href="/admin/payouts">Выплаты</a>
+<a href="/admin/settings">Настройки</a>
+<a href="/logout" class="btn btn-secondary btn-sm">Выйти</a>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <a href="/admin/users?role=advertiser" style="color: var(--text-muted); font-size: 0.875rem;">← Назад к списку</a>
+    <h1 class="page-title" style="margin-top: 0.5rem;">➕ Добавить рекламодателя</h1>
+    <p class="page-subtitle">Создание нового аккаунта рекламодателя</p>
+</div>
+
+{% if error %}
+<div class="alert alert-error">{{ error }}</div>
+{% endif %}
+
+<form method="POST" action="/admin/advertisers/add">
+    <div class="grid grid-2">
+        <!-- Основные данные -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">👤 Основные данные</h3>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Email *</label>
+                <input type="email" name="email" class="form-input" required placeholder="advertiser@company.ru">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Пароль *</label>
+                <input type="password" name="password" class="form-input" required placeholder="Минимум 6 символов" minlength="6">
+            </div>
+            
+            <div class="grid grid-2">
+                <div class="form-group">
+                    <label class="form-label">Имя</label>
+                    <input type="text" name="first_name" class="form-input" placeholder="Иван">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Фамилия</label>
+                    <input type="text" name="last_name" class="form-input" placeholder="Иванов">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Телефон</label>
+                <input type="tel" name="phone" class="form-input" placeholder="+7 999 123-45-67">
+            </div>
+        </div>
+
+        <!-- Данные компании -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">🏢 Данные компании</h3>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Название компании</label>
+                <input type="text" name="company_name" class="form-input" placeholder="Рекламное агентство XYZ">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Сайт компании</label>
+                <input type="url" name="website" class="form-input" placeholder="https://company.ru">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Юридическое название</label>
+                <input type="text" name="legal_name" class="form-input" placeholder="ООО «Рекламное агентство XYZ»">
+            </div>
+            
+            <div class="grid grid-2">
+                <div class="form-group">
+                    <label class="form-label">ИНН</label>
+                    <input type="text" name="inn" class="form-input" placeholder="1234567890" maxlength="12">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">КПП</label>
+                    <input type="text" name="kpp" class="form-input" placeholder="123456789" maxlength="9">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Юридический адрес</label>
+                <input type="text" name="legal_address" class="form-input" placeholder="г. Москва, ул. Примерная, д. 1">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Описание компании</label>
+                <textarea name="description" class="form-input" rows="3" placeholder="Кратко о компании и её рекламных потребностях..."></textarea>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Начальный баланс -->
+    <div class="card" style="margin-top: 1.5rem;">
+        <div class="card-header">
+            <h3 class="card-title">💰 Начальный баланс</h3>
+        </div>
+        <div class="grid grid-2">
+            <div class="form-group" style="margin: 0;">
+                <label class="form-label">Сумма (₽)</label>
+                <input type="number" name="initial_balance" class="form-input" value="0" min="0" step="1">
+                <small style="color: var(--text-muted);">Можно пополнить позже</small>
+            </div>
+            <div class="form-group" style="margin: 0;">
+                <label class="form-label">Статус</label>
+                <div style="display: flex; gap: 1.5rem; padding-top: 0.75rem;">
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                        <input type="checkbox" name="is_verified">
+                        <span>Верифицирован</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+        <button type="submit" class="btn btn-primary btn-lg">Создать рекламодателя</button>
+        <a href="/admin/users?role=advertiser" class="btn btn-secondary btn-lg">Отмена</a>
+    </div>
+</form>
+{% endblock %}

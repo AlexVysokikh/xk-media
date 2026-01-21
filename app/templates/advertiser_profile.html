@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block title %}Профиль — XK Media{% endblock %}
+
+{% block logo %}
+<a href="/advertiser" class="logo">
+    <span class="logo-icon">📺</span>
+    XK Media
+</a>
+{% endblock %}
+
+{% block nav %}
+<a href="/advertiser">Дашборд</a>
+<a href="/advertiser/stats">Статистика</a>
+<a href="/advertiser/subscriptions">Подписки</a>
+<a href="/advertiser/payments">Платежи</a>
+<a href="/advertiser/profile" class="active">Профиль</a>
+<a href="/logout" class="btn btn-secondary btn-sm">Выйти</a>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">👤 Мой профиль</h1>
+    <p class="page-subtitle">Настройки аккаунта и данные компании</p>
+</div>
+
+{% if success %}
+<div class="alert alert-success">✅ {{ success }}</div>
+{% endif %}
+
+<div class="grid grid-2">
+    <!-- Личные данные -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">👤 Личные данные</h3>
+        </div>
+        <form method="POST" action="/advertiser/profile">
+            <div class="form-group">
+                <label class="form-label">Email</label>
+                <input type="email" value="{{ user.email }}" class="form-input" readonly style="opacity: 0.7;">
+            </div>
+            
+            <div class="grid grid-2">
+                <div class="form-group">
+                    <label class="form-label">Имя</label>
+                    <input type="text" name="first_name" value="{{ user.first_name or '' }}" class="form-input" placeholder="Иван">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Фамилия</label>
+                    <input type="text" name="last_name" value="{{ user.last_name or '' }}" class="form-input" placeholder="Иванов">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Телефон</label>
+                <input type="tel" name="phone" value="{{ user.phone or '' }}" class="form-input" placeholder="+7 999 123-45-67">
+            </div>
+            
+            <button type="submit" class="btn btn-primary">Сохранить</button>
+        </form>
+    </div>
+
+    <!-- Данные компании -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">🏢 Данные компании</h3>
+        </div>
+        <form method="POST" action="/advertiser/profile/company">
+            <div class="form-group">
+                <label class="form-label">Название компании</label>
+                <input type="text" name="company_name" value="{{ user.company_name or '' }}" class="form-input" placeholder="ООО Компания">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Сайт</label>
+                <input type="url" name="website" value="{{ user.website or '' }}" class="form-input" placeholder="https://company.ru">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Юридическое название</label>
+                <input type="text" name="legal_name" value="{{ user.legal_name or '' }}" class="form-input" placeholder="ООО «Компания»">
+            </div>
+            
+            <div class="grid grid-2">
+                <div class="form-group">
+                    <label class="form-label">ИНН</label>
+                    <input type="text" name="inn" value="{{ user.inn or '' }}" class="form-input" maxlength="12">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">КПП</label>
+                    <input type="text" name="kpp" value="{{ user.kpp or '' }}" class="form-input" maxlength="9">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">Юридический адрес</label>
+                <input type="text" name="legal_address" value="{{ user.legal_address or '' }}" class="form-input">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label">О компании</label>
+                <textarea name="description" class="form-input" rows="3">{{ user.description or '' }}</textarea>
+            </div>
+            
+            <button type="submit" class="btn btn-primary">Сохранить</button>
+        </form>
+    </div>
+</div>
+
+<!-- Смена пароля -->
+<div class="card" style="margin-top: 1.5rem;">
+    <div class="card-header">
+        <h3 class="card-title">🔐 Смена пароля</h3>
+    </div>
+    <form method="POST" action="/advertiser/profile/password">
+        <div class="grid grid-3">
+            <div class="form-group" style="margin: 0;">
+                <label class="form-label">Текущий пароль</label>
+                <input type="password" name="current_password" class="form-input" required>
+            </div>
+            <div class="form-group" style="margin: 0;">
+                <label class="form-label">Новый пароль</label>
+                <input type="password" name="new_password" class="form-input" required minlength="6">
+            </div>
+            <div class="form-group" style="margin: 0;">
+                <label class="form-label">Подтверждение</label>
+                <input type="password" name="confirm_password" class="form-input" required minlength="6">
+            </div>
+        </div>
+        <button type="submit" class="btn btn-secondary" style="margin-top: 1rem;">Изменить пароль</button>
+    </form>
+</div>
+{% endblock %}

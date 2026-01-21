@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+
+{% block title %}Кабинет владельца — XK Media{% endblock %}
+
+{% block logo %}
+<a href="/venue" class="logo">
+    <span class="logo-icon">📺</span>
+    XK Media
+</a>
+{% endblock %}
+
+{% block nav %}
+<a href="/venue" class="active">Обзор</a>
+<a href="/venue/tvs">Мои ТВ</a>
+<a href="/venue/earnings">Доходы</a>
+<a href="/venue/profile">Профиль</a>
+<a href="/logout" class="btn btn-secondary btn-sm">Выйти</a>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <div>
+        <h1>👋 Добро пожаловать, {{ user.company_name or user.first_name or user.email }}</h1>
+        <p class="subtitle">Кабинет владельца площадки</p>
+    </div>
+    <a href="/venue/tv/add" class="btn btn-primary">+ Добавить ТВ</a>
+</div>
+
+<nav class="tabs">
+    <a href="/venue" class="tab active">Обзор</a>
+    <a href="/venue/tvs" class="tab">Мои ТВ</a>
+    <a href="/venue/advertisers" class="tab">Рекламодатели</a>
+    <a href="/venue/earnings" class="tab">Доходы</a>
+    <a href="/venue/documents" class="tab">Документы</a>
+    <a href="/venue/profile" class="tab">Профиль</a>
+</nav>
+
+<!-- Stats Cards -->
+<div class="grid grid-4">
+    <div class="card stat-card">
+        <div class="stat-icon">📺</div>
+        <div class="stat-value">{{ stats.total_tvs }}</div>
+        <div class="stat-label">ТВ-экранов</div>
+        <div class="stat-sub">Активных: {{ stats.active_tvs }}</div>
+    </div>
+    <div class="card stat-card">
+        <div class="stat-icon">👁️</div>
+        <div class="stat-value">{{ "{:,}".format(stats.total_impressions).replace(",", " ") }}</div>
+        <div class="stat-label">Показов рекламы</div>
+        <div class="stat-sub">Переходов: {{ stats.total_clicks }}</div>
+    </div>
+    <div class="card stat-card">
+        <div class="stat-icon">💰</div>
+        <div class="stat-value">{{ stats.total_earnings }} ₽</div>
+        <div class="stat-label">Всего заработано</div>
+        <div class="stat-sub">Выплачено: {{ stats.total_paid }} ₽</div>
+    </div>
+    <div class="card stat-card highlight">
+        <div class="stat-icon">⏳</div>
+        <div class="stat-value">{{ stats.pending }} ₽</div>
+        <div class="stat-label">К выплате</div>
+        <div class="stat-sub">Рекламодателей: {{ stats.advertisers_count }}</div>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div class="grid grid-2">
+    <!-- TVs List -->
+    <div class="card">
+        <div class="card-header">
+            <h3>📺 Мои ТВ-экраны</h3>
+            <a href="/venue/tvs" class="btn btn-sm">Все →</a>
+        </div>
+        <div class="card-content">
+            {% if tvs %}
+            <div class="list">
+                {% for tv in tvs[:5] %}
+                <a href="/venue/tv/{{ tv.id }}" class="list-item">
+                    <div class="list-item-main">
+                        <div class="list-item-title">{{ tv.name }}</div>
+                        <div class="list-item-sub">{{ tv.venue_name or tv.address or "—" }}</div>
+                    </div>
+                    <div class="list-item-badge {{ 'badge-success' if tv.is_approved else 'badge-warning' }}">
+                        {{ "Активен" if tv.is_approved else "На модерации" }}
+                    </div>
+                </a>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">📺</div>
+                <p>У вас пока нет ТВ-экранов</p>
+                <a href="/venue/tv/add" class="btn btn-primary">Добавить первый ТВ</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Tariff Info -->
+    <div class="card">
+        <div class="card-header">
+            <h3>💎 Тарифы</h3>
+        </div>
+        <div class="card-content">
+            <div class="tariff-cards">
+                <div class="tariff-card">
+                    <div class="tariff-icon">🖥️</div>
+                    <div class="tariff-title">ТВ агрегатора</div>
+                    <div class="tariff-percent">60%</div>
+                    <div class="tariff-desc">Вам выплачивается 60% от стоимости размещения при использовании оборудования XK Media</div>
+                </div>
+                <div class="tariff-card highlight">
+                    <div class="tariff-icon">📺</div>
+                    <div class="tariff-title">Своё оборудование</div>
+                    <div class="tariff-percent">70%</div>
+                    <div class="tariff-desc">Вам выплачивается 70% от стоимости размещения при использовании вашего оборудования</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Payouts -->
+<div class="card">
+    <div class="card-header">
+        <h3>💸 Последние выплаты</h3>
+        <a href="/venue/earnings" class="btn btn-sm">Все выплаты →</a>
+    </div>
+    <div class="card-content">
+        {% if recent_payouts %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Период</th>
+                    <th>Сумма</th>
+                    <th>Статус</th>
+                    <th>Дата</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for payout in recent_payouts %}
+                <tr>
+                    <td>{{ payout.period_start.strftime("%d.%m") }} — {{ payout.period_end.strftime("%d.%m.%Y") }}</td>
+                    <td class="amount">{{ "{:,.0f}".format(payout.amount).replace(",", " ") }} ₽</td>
+                    <td>
+                        {% if payout.status == "paid" %}
+                        <span class="badge badge-success">Выплачено</span>
+                        {% elif payout.status == "processing" %}
+                        <span class="badge badge-warning">В обработке</span>
+                        {% else %}
+                        <span class="badge badge-info">Ожидает</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ payout.paid_at.strftime("%d.%m.%Y") if payout.paid_at else "—" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state-small">
+            <p>Выплат пока нет. Они появятся после размещения рекламы на ваших ТВ.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.tariff-cards {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+.tariff-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: center;
+    transition: all 0.2s;
+}
+
+.tariff-card.highlight {
+    border-color: var(--accent);
+    background: rgba(233, 69, 96, 0.05);
+}
+
+.tariff-icon {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.tariff-title {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.tariff-percent {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+}
+
+.tariff-desc {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+@media (max-width: 768px) {
+    .tariff-cards {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}

@@ -1,0 +1,264 @@
+{% extends "base.html" %}
+
+{% block title %}{{ target_user.email }} — Админ{% endblock %}
+
+{% block logo %}
+<a href="/admin" class="logo">
+    <span class="logo-icon">📺</span>
+    XK Media
+</a>
+{% endblock %}
+
+{% block nav %}
+<a href="/admin">Дашборд</a>
+<a href="/admin/users" class="active">Пользователи</a>
+<a href="/admin/tvs">Экраны</a>
+<a href="/admin/payments">Платежи</a>
+<a href="/admin/payouts">Выплаты</a>
+<a href="/admin/settings">Настройки</a>
+<a href="/logout" class="btn btn-secondary btn-sm">Выйти</a>
+{% endblock %}
+
+{% block content %}
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start;">
+    <div>
+        <a href="/admin/users" style="color: var(--text-muted); font-size: 0.875rem;">← Назад к списку</a>
+        <h1 class="page-title" style="margin-top: 0.5rem;">
+            {{ target_user.first_name or '' }} {{ target_user.last_name or target_user.email }}
+        </h1>
+        <p class="page-subtitle">
+            {% if target_user.role == 'advertiser' %}Рекламодатель{% elif target_user.role == 'venue' %}Площадка{% else %}Администратор{% endif %}
+            · ID #{{ target_user.id }}
+        </p>
+    </div>
+    <div style="display: flex; gap: 0.5rem;">
+        {% if target_user.is_active %}
+        <a href="/admin/user/{{ target_user.id }}/block" class="btn btn-secondary btn-sm" onclick="return confirm('Заблокировать пользователя?')">Заблокировать</a>
+        {% else %}
+        <a href="/admin/user/{{ target_user.id }}/unblock" class="btn btn-primary btn-sm">Разблокировать</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="grid grid-2">
+    <!-- Основная информация -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">📋 Основная информация</h3>
+        </div>
+        <form method="POST" action="/admin/user/{{ target_user.id }}">
+            <div class="form-group">
+                <label class="form-label">Email</label>
+                <input type="email" name="email" value="{{ target_user.email }}" class="form-input" readonly>
+            </div>
+            <div class="grid grid-2">
+                <div class="form-group">
+                    <label class="form-label">Имя</label>
+                    <input type="text" name="first_name" value="{{ target_user.first_name or '' }}" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Фамилия</label>
+                    <input type="text" name="last_name" value="{{ target_user.last_name or '' }}" class="form-input">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Телефон</label>
+                <input type="tel" name="phone" value="{{ target_user.phone or '' }}" class="form-input" placeholder="+7 999 123-45-67">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Роль</label>
+                <select name="role" class="form-input">
+                    <option value="advertiser" {% if target_user.role == 'advertiser' %}selected{% endif %}>Рекламодатель</option>
+                    <option value="venue" {% if target_user.role == 'venue' %}selected{% endif %}>Площадка</option>
+                    <option value="admin" {% if target_user.role == 'admin' %}selected{% endif %}>Администратор</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                    <input type="checkbox" name="is_verified" {% if target_user.is_verified %}checked{% endif %}>
+                    <span>Верифицирован</span>
+                </label>
+            </div>
+            <button type="submit" class="btn btn-primary">Сохранить</button>
+        </form>
+    </div>
+
+    <!-- Данные компании -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">🏢 Данные компании</h3>
+        </div>
+        <form method="POST" action="/admin/user/{{ target_user.id }}/company">
+            <div class="form-group">
+                <label class="form-label">Название компании</label>
+                <input type="text" name="company_name" value="{{ target_user.company_name or '' }}" class="form-input" placeholder="ООО Рекламное Агентство">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Юридическое название</label>
+                <input type="text" name="legal_name" value="{{ target_user.legal_name or '' }}" class="form-input" placeholder="ООО «Рекламное Агентство»">
+            </div>
+            <div class="grid grid-2">
+                <div class="form-group">
+                    <label class="form-label">ИНН</label>
+                    <input type="text" name="inn" value="{{ target_user.inn or '' }}" class="form-input" placeholder="1234567890" maxlength="12">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">КПП</label>
+                    <input type="text" name="kpp" value="{{ target_user.kpp or '' }}" class="form-input" placeholder="123456789" maxlength="9">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Юридический адрес</label>
+                <input type="text" name="legal_address" value="{{ target_user.legal_address or '' }}" class="form-input" placeholder="г. Москва, ул. Примерная, д. 1">
+            </div>
+            <button type="submit" class="btn btn-primary">Сохранить</button>
+        </form>
+    </div>
+</div>
+
+{% if target_user.role == 'advertiser' %}
+<!-- Баланс и платежи -->
+<div class="card" style="margin-top: 1.5rem;">
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <h3 class="card-title">💰 Баланс и платежи</h3>
+        <div style="font-size: 1.5rem; font-weight: 700; color: var(--accent);">
+            {{ "%.0f"|format(target_user.balance or 0) }} ₽
+        </div>
+    </div>
+    
+    <!-- Ручное пополнение -->
+    <form method="POST" action="/admin/user/{{ target_user.id }}/add-balance" style="display: flex; gap: 1rem; align-items: flex-end; margin-bottom: 1.5rem;">
+        <div class="form-group" style="margin: 0; flex: 1;">
+            <label class="form-label">Пополнить баланс вручную</label>
+            <input type="number" name="amount" class="form-input" placeholder="1000" min="1" step="1" required>
+        </div>
+        <div class="form-group" style="margin: 0; flex: 2;">
+            <input type="text" name="comment" class="form-input" placeholder="Комментарий (необязательно)">
+        </div>
+        <button type="submit" class="btn btn-primary">Пополнить</button>
+    </form>
+    
+    <!-- История платежей -->
+    <h4 style="margin-bottom: 1rem; color: var(--text-muted);">История платежей</h4>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Дата</th>
+                <th>Сумма</th>
+                <th>Описание</th>
+                <th>Статус</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in payments %}
+            <tr>
+                <td>{{ p.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
+                <td style="font-weight: 600;">{{ "%.0f"|format(p.amount) }} ₽</td>
+                <td>{{ p.description or '—' }}</td>
+                <td>
+                    {% if p.status == 'succeeded' %}
+                    <span class="badge badge-success">Оплачен</span>
+                    {% elif p.status == 'pending' or p.status == 'waiting' %}
+                    <span class="badge badge-warning">Ожидание</span>
+                    {% else %}
+                    <span class="badge badge-danger">{{ p.status }}</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+            {% if not payments %}
+            <tr>
+                <td colspan="4" style="text-align: center; color: var(--text-muted);">Платежей нет</td>
+            </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Подписки на ТВ -->
+<div class="card" style="margin-top: 1.5rem;">
+    <div class="card-header">
+        <h3 class="card-title">📺 Подписки на ТВ</h3>
+    </div>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ТВ</th>
+                <th>Место</th>
+                <th>Период</th>
+                <th>Стоимость</th>
+                <th>Статус</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for s in subscriptions %}
+            <tr>
+                <td>
+                    <a href="/admin/tv/{{ s.tv.code }}">{{ s.tv.name }}</a>
+                </td>
+                <td>{{ s.tv.venue_name or s.tv.address or '—' }}</td>
+                <td>{{ s.start_date.strftime('%d.%m.%Y') }} — {{ s.end_date.strftime('%d.%m.%Y') }}</td>
+                <td>{{ "%.0f"|format(s.price) }} ₽</td>
+                <td>
+                    {% if s.is_active %}
+                    <span class="badge badge-success">Активна</span>
+                    {% else %}
+                    <span class="badge badge-danger">Неактивна</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+            {% if not subscriptions %}
+            <tr>
+                <td colspan="5" style="text-align: center; color: var(--text-muted);">Подписок нет</td>
+            </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% if target_user.role == 'venue' %}
+<!-- ТВ площадки -->
+<div class="card" style="margin-top: 1.5rem;">
+    <div class="card-header">
+        <h3 class="card-title">📺 ТВ площадки</h3>
+    </div>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Код</th>
+                <th>Название</th>
+                <th>Адрес</th>
+                <th>Статус</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for tv in owned_tvs %}
+            <tr>
+                <td><code>{{ tv.code }}</code></td>
+                <td>{{ tv.name }}</td>
+                <td>{{ tv.address or '—' }}</td>
+                <td>
+                    {% if tv.is_active %}
+                    <span class="badge badge-success">Активен</span>
+                    {% else %}
+                    <span class="badge badge-danger">Неактивен</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="/admin/tv/{{ tv.code }}" class="btn btn-secondary btn-sm">Открыть</a>
+                </td>
+            </tr>
+            {% endfor %}
+            {% if not owned_tvs %}
+            <tr>
+                <td colspan="5" style="text-align: center; color: var(--text-muted);">ТВ не привязаны</td>
+            </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+{% endblock %}

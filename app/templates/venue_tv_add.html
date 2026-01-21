@@ -1,0 +1,323 @@
+{% extends "base.html" %}
+
+{% block title %}Добавить ТВ — XK Media{% endblock %}
+
+{% block logo %}
+<a href="/venue" class="logo">
+    <span class="logo-icon">📺</span>
+    XK Media
+</a>
+{% endblock %}
+
+{% block nav %}
+<a href="/venue">Обзор</a>
+<a href="/venue/tvs">Мои ТВ</a>
+<a href="/venue/earnings">Доходы</a>
+<a href="/venue/profile">Профиль</a>
+<a href="/logout" class="btn btn-secondary btn-sm">Выйти</a>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <div>
+        <a href="/venue/tvs" class="back-link">← Назад к списку</a>
+        <h1>📺 Добавить ТВ-экран</h1>
+        <p class="subtitle">Заполните информацию о вашем заведении и ТВ</p>
+    </div>
+</div>
+
+<form method="POST" action="/venue/tv/add" class="tv-form">
+    <!-- Basic Info -->
+    <div class="card">
+        <div class="card-header">
+            <h3>📋 Основная информация</h3>
+        </div>
+        <div class="card-content">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="name">Название ТВ-экрана *</label>
+                    <input type="text" id="name" name="name" required placeholder="Например: ТВ у входа">
+                </div>
+                <div class="form-group">
+                    <label for="code">Код ТВ</label>
+                    <input type="text" id="code" name="code" placeholder="Оставьте пустым для автогенерации">
+                    <span class="form-hint">Уникальный код для QR-ссылки</span>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="venue_name">Название заведения *</label>
+                    <input type="text" id="venue_name" name="venue_name" required placeholder='Например: Кофейня "Рассвет"'>
+                </div>
+                <div class="form-group">
+                    <label for="category">Категория</label>
+                    <select id="category" name="category">
+                        {% for key, value in categories.items() %}
+                        <option value="{{ key }}">{{ value }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="description">Описание заведения</label>
+                <textarea id="description" name="description" rows="3" placeholder="Расскажите о вашем заведении, особенностях, атмосфере..."></textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- Location -->
+    <div class="card">
+        <div class="card-header">
+            <h3>📍 Местоположение</h3>
+        </div>
+        <div class="card-content">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="city">Город *</label>
+                    <input type="text" id="city" name="city" required placeholder="Например: Москва">
+                </div>
+                <div class="form-group">
+                    <label for="address">Адрес *</label>
+                    <input type="text" id="address" name="address" required placeholder="ул. Примерная, д. 1">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="working_hours">Часы работы</label>
+                <input type="text" id="working_hours" name="working_hours" placeholder="Например: 09:00-22:00 или круглосуточно">
+            </div>
+        </div>
+    </div>
+
+    <!-- Audience -->
+    <div class="card">
+        <div class="card-header">
+            <h3>👥 Аудитория и статистика</h3>
+        </div>
+        <div class="card-content">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="target_audience">Целевая аудитория</label>
+                    <select id="target_audience" name="target_audience">
+                        {% for key, value in audiences.items() %}
+                        <option value="{{ key }}">{{ value }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="clients_per_day">Клиентов в день (среднее)</label>
+                    <input type="number" id="clients_per_day" name="clients_per_day" min="0" placeholder="0">
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="avg_check">Средний чек, ₽</label>
+                    <input type="number" id="avg_check" name="avg_check" min="0" step="0.01" placeholder="0">
+                </div>
+                <div class="form-group">
+                    <label for="photo_url">Фото заведения (URL)</label>
+                    <input type="url" id="photo_url" name="photo_url" placeholder="https://...">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Equipment & Tariff -->
+    <div class="card">
+        <div class="card-header">
+            <h3>💎 Тип оборудования и тариф</h3>
+        </div>
+        <div class="card-content">
+            <div class="equipment-options">
+                <label class="equipment-option">
+                    <input type="radio" name="equipment_type" value="aggregator" checked>
+                    <div class="equipment-card">
+                        <div class="equipment-icon">🖥️</div>
+                        <div class="equipment-title">ТВ агрегатора</div>
+                        <div class="equipment-percent">60%</div>
+                        <div class="equipment-desc">Используется оборудование XK Media</div>
+                    </div>
+                </label>
+                <label class="equipment-option">
+                    <input type="radio" name="equipment_type" value="venue">
+                    <div class="equipment-card">
+                        <div class="equipment-icon">📺</div>
+                        <div class="equipment-title">Своё оборудование</div>
+                        <div class="equipment-percent">70%</div>
+                        <div class="equipment-desc">Используется ваш ТВ-экран</div>
+                    </div>
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Legal Info -->
+    <div class="card">
+        <div class="card-header">
+            <h3>📄 Юридические данные и реквизиты</h3>
+            <span class="badge badge-info">Для выплат</span>
+        </div>
+        <div class="card-content">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="legal_name">Юридическое название</label>
+                    <input type="text" id="legal_name" name="legal_name" placeholder='ООО "Название"' value="{{ user.legal_name or '' }}">
+                </div>
+                <div class="form-group">
+                    <label for="inn">ИНН</label>
+                    <input type="text" id="inn" name="inn" maxlength="12" placeholder="1234567890" value="{{ user.inn or '' }}">
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="kpp">КПП</label>
+                    <input type="text" id="kpp" name="kpp" maxlength="9" placeholder="123456789">
+                </div>
+                <div class="form-group">
+                    <label for="bank_name">Название банка</label>
+                    <input type="text" id="bank_name" name="bank_name" placeholder="Сбербанк">
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="bank_bik">БИК</label>
+                    <input type="text" id="bank_bik" name="bank_bik" maxlength="9" placeholder="044525225">
+                </div>
+                <div class="form-group">
+                    <label for="bank_account">Расчётный счёт</label>
+                    <input type="text" id="bank_account" name="bank_account" maxlength="20" placeholder="40702810000000000000">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contact Info -->
+    <div class="card">
+        <div class="card-header">
+            <h3>📞 Контактная информация</h3>
+        </div>
+        <div class="card-content">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="contact_person">Контактное лицо</label>
+                    <input type="text" id="contact_person" name="contact_person" placeholder="Иван Иванов" value="{{ (user.first_name or '') + ' ' + (user.last_name or '') }}">
+                </div>
+                <div class="form-group">
+                    <label for="contact_phone">Телефон</label>
+                    <input type="tel" id="contact_phone" name="contact_phone" placeholder="+7 (999) 123-45-67" value="{{ user.phone or '' }}">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="contact_email">Email</label>
+                <input type="email" id="contact_email" name="contact_email" placeholder="contact@example.com" value="{{ user.email }}">
+            </div>
+        </div>
+    </div>
+
+    <div class="form-actions">
+        <a href="/venue/tvs" class="btn btn-outline">Отмена</a>
+        <button type="submit" class="btn btn-primary btn-lg">📺 Добавить ТВ</button>
+    </div>
+</form>
+
+<style>
+.tv-form {
+    max-width: 800px;
+}
+
+.tv-form .card {
+    margin-bottom: 1.5rem;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+@media (max-width: 768px) {
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+.equipment-options {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+@media (max-width: 768px) {
+    .equipment-options {
+        grid-template-columns: 1fr;
+    }
+}
+
+.equipment-option {
+    cursor: pointer;
+}
+
+.equipment-option input {
+    display: none;
+}
+
+.equipment-card {
+    padding: 1.5rem;
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    text-align: center;
+    transition: all 0.2s;
+}
+
+.equipment-option input:checked + .equipment-card {
+    border-color: var(--accent);
+    background: rgba(233, 69, 96, 0.1);
+}
+
+.equipment-icon {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.equipment-title {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.equipment-percent {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 0.5rem;
+}
+
+.equipment-desc {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    padding-top: 1rem;
+}
+
+.back-link {
+    display: inline-block;
+    color: var(--text-secondary);
+    text-decoration: none;
+    margin-bottom: 0.5rem;
+}
+
+.back-link:hover {
+    color: var(--accent);
+}
+</style>
+{% endblock %}

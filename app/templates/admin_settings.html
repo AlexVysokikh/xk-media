@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+
+{% block title %}Настройки сайта — XK Media{% endblock %}
+
+{% block logo %}
+<a href="/admin" class="logo">
+    <span class="logo-icon">📺</span>
+    XK Media
+</a>
+{% endblock %}
+
+{% block nav %}
+<a href="/admin">Дашборд</a>
+<a href="/admin/users">Пользователи</a>
+<a href="/admin/tvs">Экраны</a>
+<a href="/admin/payments">Платежи</a>
+<a href="/admin/payouts">Выплаты</a>
+<a href="/admin/settings" class="active">Настройки</a>
+<a href="/logout" class="btn btn-secondary btn-sm">Выйти</a>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">⚙️ Настройки сайта</h1>
+    <p class="page-subtitle">Оферта и другие документы</p>
+</div>
+
+{% if success %}
+<div class="alert alert-success">{{ success }}</div>
+{% endif %}
+
+<div class="grid grid-2">
+    <!-- Offer Settings -->
+    <div class="card">
+        <div class="card-header">
+            <h3>📜 Оферта</h3>
+            <a href="/offer" class="btn btn-sm" target="_blank">Просмотр ↗</a>
+        </div>
+        <div class="card-content">
+            <form method="POST" action="/admin/settings/offer">
+                <div class="form-group">
+                    <label for="title">Заголовок</label>
+                    <input type="text" id="title" name="title" value="{{ offer.title if offer else 'Оферта' }}" placeholder="Оферта">
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="version">Версия</label>
+                        <input type="text" id="version" name="version" value="{{ offer.version if offer else '1.0' }}" placeholder="1.0">
+                    </div>
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="is_active" {{ 'checked' if offer and offer.is_active else 'checked' }}>
+                            Активна
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="content">Текст оферты (HTML)</label>
+                    <textarea id="content" name="content" rows="20" placeholder="Введите текст оферты...">{{ offer.content if offer else '' }}</textarea>
+                    <span class="form-hint">Поддерживается HTML-разметка: &lt;h2&gt;, &lt;h3&gt;, &lt;p&gt;, &lt;ul&gt;, &lt;ol&gt;, &lt;li&gt;, &lt;strong&gt;, &lt;em&gt;</span>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">Сохранить оферту</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Stats & Quick Links -->
+    <div>
+        <div class="card">
+            <div class="card-header">
+                <h3>📊 Статистика согласий</h3>
+            </div>
+            <div class="card-content">
+                <a href="/admin/users/offers" class="stats-link">
+                    <span>Посмотреть всех пользователей, принявших оферту →</span>
+                </a>
+            </div>
+        </div>
+        
+        <div class="card" style="margin-top: 1.5rem;">
+            <div class="card-header">
+                <h3>📝 Пример оферты</h3>
+            </div>
+            <div class="card-content">
+                <div class="example-offer">
+<pre>&lt;h2&gt;1. Общие положения&lt;/h2&gt;
+&lt;p&gt;Настоящая Оферта является официальным предложением ООО "XK Media" (далее — Исполнитель) заключить Договор на оказание услуг по размещению рекламы.&lt;/p&gt;
+
+&lt;h2&gt;2. Предмет договора&lt;/h2&gt;
+&lt;p&gt;Исполнитель обязуется оказать Заказчику услуги по размещению рекламных материалов на ТВ-экранах сети XK Media.&lt;/p&gt;
+
+&lt;h2&gt;3. Стоимость услуг&lt;/h2&gt;
+&lt;ul&gt;
+    &lt;li&gt;Стоимость размещения определяется действующим прайс-листом&lt;/li&gt;
+    &lt;li&gt;Оплата производится на условиях 100% предоплаты&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2&gt;4. Права и обязанности сторон&lt;/h2&gt;
+&lt;p&gt;...&lt;/p&gt;</pre>
+                </div>
+                <button onclick="document.getElementById('content').value = this.previousElementSibling.querySelector('pre').textContent; return false;" class="btn btn-sm btn-outline" style="margin-top: 1rem;">Вставить пример</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    align-items: end;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    padding: 0.5rem 0;
+}
+
+.checkbox-label input {
+    width: 18px;
+    height: 18px;
+}
+
+textarea {
+    font-family: monospace;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.stats-link {
+    display: block;
+    padding: 1rem;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    color: var(--accent);
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.stats-link:hover {
+    background: rgba(233, 69, 96, 0.1);
+}
+
+.example-offer {
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    padding: 1rem;
+    overflow-x: auto;
+}
+
+.example-offer pre {
+    margin: 0;
+    font-size: 0.8rem;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+</style>
+{% endblock %}

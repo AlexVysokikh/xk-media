@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block title %}Согласия на оферту — XK Media{% endblock %}
+
+{% block logo %}
+<a href="/admin" class="logo">
+    <span class="logo-icon">📺</span>
+    XK Media
+</a>
+{% endblock %}
+
+{% block nav %}
+<a href="/admin">Дашборд</a>
+<a href="/admin/users">Пользователи</a>
+<a href="/admin/tvs">Экраны</a>
+<a href="/admin/payments">Платежи</a>
+<a href="/admin/payouts">Выплаты</a>
+<a href="/admin/settings" class="active">Настройки</a>
+<a href="/logout" class="btn btn-secondary btn-sm">Выйти</a>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <div>
+        <a href="/admin/settings" class="back-link">← Назад к настройкам</a>
+        <h1>📋 Согласия на оферту</h1>
+        <p class="subtitle">Пользователи, принявшие условия оферты</p>
+    </div>
+</div>
+
+<!-- Stats -->
+<div class="grid grid-3">
+    <div class="card stat-card">
+        <div class="stat-icon">✅</div>
+        <div class="stat-value">{{ total_accepted }}</div>
+        <div class="stat-label">Всего приняли</div>
+    </div>
+    <div class="card stat-card">
+        <div class="stat-icon">📢</div>
+        <div class="stat-value">{{ advertisers }}</div>
+        <div class="stat-label">Рекламодателей</div>
+    </div>
+    <div class="card stat-card">
+        <div class="stat-icon">📺</div>
+        <div class="stat-value">{{ venues }}</div>
+        <div class="stat-label">Владельцев площадок</div>
+    </div>
+</div>
+
+<!-- Users Table -->
+<div class="card">
+    <div class="card-header">
+        <h3>📋 Список пользователей</h3>
+    </div>
+    <div class="card-content">
+        {% if users %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Пользователь</th>
+                    <th>Роль</th>
+                    <th>Версия оферты</th>
+                    <th>Дата согласия</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in users %}
+                <tr>
+                    <td>{{ u.id }}</td>
+                    <td>
+                        <strong>{{ u.email }}</strong>
+                        {% if u.company_name %}
+                        <br><span class="text-secondary">{{ u.company_name }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if u.role == 'advertiser' %}
+                        <span class="badge badge-info">Рекламодатель</span>
+                        {% elif u.role == 'venue' %}
+                        <span class="badge badge-warning">Площадка</span>
+                        {% else %}
+                        <span class="badge">{{ u.role }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ u.offer_version or "—" }}</td>
+                    <td>{{ u.offer_accepted_at.strftime("%d.%m.%Y %H:%M") if u.offer_accepted_at else "—" }}</td>
+                    <td>
+                        <a href="/admin/user/{{ u.id }}" class="btn btn-sm">Подробнее</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">📋</div>
+            <p>Пока никто не принял оферту</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.back-link {
+    display: inline-block;
+    color: var(--text-secondary);
+    text-decoration: none;
+    margin-bottom: 0.5rem;
+}
+
+.back-link:hover {
+    color: var(--accent);
+}
+</style>
+{% endblock %}

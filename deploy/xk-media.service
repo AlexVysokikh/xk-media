@@ -1,0 +1,16 @@
+[Unit]
+Description=XK Media FastAPI Application
+After=network.target
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/xk-media
+Environment="PATH=/opt/xk-media/.venv/bin"
+EnvironmentFile=/opt/xk-media/.env
+ExecStart=/opt/xk-media/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000 --workers 2
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

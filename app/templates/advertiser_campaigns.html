@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block title %}Мои рекламы — XK Media{% endblock %}
+
+{% block logo %}
+<a href="/advertiser" class="logo">
+    <span class="logo-icon">📺</span>
+    XK Media
+</a>
+{% endblock %}
+
+{% block nav %}
+<a href="/advertiser">Дашборд</a>
+<a href="/advertiser/stats">Статистика</a>
+<a href="/advertiser/subscriptions">Подписки</a>
+<a href="/advertiser/payments">Платежи</a>
+<a href="/advertiser/profile">Профиль</a>
+<a href="/logout" class="btn btn-secondary btn-sm">Выйти</a>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">📺 Мои рекламные размещения</h1>
+    <p class="page-subtitle">Статистика показов и кликов по всем вашим рекламам</p>
+</div>
+
+<!-- Общая статистика -->
+<div class="grid grid-3" style="margin-bottom: 2rem;">
+    <div class="card stat-card">
+        <div class="stat-value" style="color: var(--accent);">{{ stats.total_impressions }}</div>
+        <div class="stat-label">Всего показов</div>
+    </div>
+    <div class="card stat-card">
+        <div class="stat-value" style="color: var(--success);">{{ stats.total_clicks }}</div>
+        <div class="stat-label">Всего кликов</div>
+    </div>
+    <div class="card stat-card">
+        <div class="stat-value">{{ stats.active_count }}</div>
+        <div class="stat-label">Активных размещений</div>
+    </div>
+</div>
+
+<!-- Список рекламных размещений -->
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">📋 Все размещения ({{ campaigns|length }})</h3>
+    </div>
+    
+    {% if campaigns %}
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ТВ / Место</th>
+                <th>Реклама</th>
+                <th>Показы</th>
+                <th>Клики</th>
+                <th>CTR</th>
+                <th>Статус</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for c in campaigns %}
+            <tr>
+                <td>
+                    <div style="font-weight: 600;">{{ c.tv.name }}</div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">
+                        {{ c.tv.venue_name or c.tv.address or '' }}
+                    </div>
+                    {% if c.tv.city %}
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">{{ c.tv.city }}</div>
+                    {% endif %}
+                </td>
+                <td>
+                    <div style="font-weight: 500;">{{ c.title }}</div>
+                    <a href="{{ c.url }}" target="_blank" style="font-size: 0.75rem;">{{ c.url[:40] }}...</a>
+                    {% if c.description %}
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">{{ c.description[:50] }}...</div>
+                    {% endif %}
+                </td>
+                <td style="font-size: 1.25rem; font-weight: 600; color: var(--accent);">
+                    {{ c.impressions or 0 }}
+                </td>
+                <td style="font-size: 1.25rem; font-weight: 600; color: var(--success);">
+                    {{ c.clicks or 0 }}
+                </td>
+                <td style="font-weight: 600;">
+                    {% if c.impressions and c.impressions > 0 %}
+                    {{ "%.2f"|format(c.clicks / c.impressions * 100) }}%
+                    {% else %}
+                    0%
+                    {% endif %}
+                </td>
+                <td>
+                    {% if c.is_active %}
+                    <span class="badge badge-success">Активна</span>
+                    {% else %}
+                    <span class="badge badge-danger">Неактивна</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div style="text-align: center; padding: 3rem; color: var(--text-muted);">
+        <p style="font-size: 1.25rem; margin-bottom: 1rem;">📭 У вас пока нет рекламных размещений</p>
+        <p>Свяжитесь с администратором для размещения вашей рекламы на ТВ-экранах</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Пояснение к метрикам -->
+<div class="card" style="margin-top: 1.5rem;">
+    <div class="card-header">
+        <h3 class="card-title">📊 Пояснение к метрикам</h3>
+    </div>
+    <div class="grid grid-3">
+        <div>
+            <div style="font-weight: 600; margin-bottom: 0.5rem;">Показы (Impressions)</div>
+            <div style="font-size: 0.875rem; color: var(--text-muted);">
+                Количество раз, когда ваша реклама была показана на экране
+            </div>
+        </div>
+        <div>
+            <div style="font-weight: 600; margin-bottom: 0.5rem;">Клики (Clicks)</div>
+            <div style="font-size: 0.875rem; color: var(--text-muted);">
+                Количество переходов по вашей ссылке (через QR-код)
+            </div>
+        </div>
+        <div>
+            <div style="font-weight: 600; margin-bottom: 0.5rem;">CTR</div>
+            <div style="font-size: 0.875rem; color: var(--text-muted);">
+                Click-Through Rate — отношение кликов к показам в процентах
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
