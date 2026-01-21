@@ -29,6 +29,10 @@
 <div class="alert alert-success">{{ success }}</div>
 {% endif %}
 
+{% if error %}
+<div class="alert alert-error">{{ error }}</div>
+{% endif %}
+
 <div class="grid grid-2">
     <!-- Offer Settings -->
     <div class="card">
@@ -85,8 +89,66 @@
                 <h3>🔐 OAuth настройки</h3>
             </div>
             <div class="card-content">
-                <div id="oauth-status">Загрузка...</div>
-                <button onclick="checkOAuth()" class="btn btn-sm btn-outline" style="margin-top: 1rem;">Проверить OAuth</button>
+                <form method="POST" action="/admin/settings/oauth" id="oauth-form">
+                    <div class="form-group">
+                        <label for="base_url">Base URL (для redirect URI)</label>
+                        <input type="text" id="base_url" name="base_url" value="{{ settings.BASE_URL }}" placeholder="https://yourdomain.com" required>
+                        <span class="form-hint">Базовый URL вашего сайта (без слеша в конце)</span>
+                    </div>
+                    
+                    <div style="margin: 2rem 0; padding: 1rem; background: var(--bg-secondary); border-radius: 8px;">
+                        <h4 style="margin-top: 0;">🔵 Google OAuth</h4>
+                        <div class="form-group">
+                            <label for="google_client_id">Google Client ID</label>
+                            <input type="text" id="google_client_id" name="google_client_id" value="{{ settings.GOOGLE_CLIENT_ID or '' }}" placeholder="xxxxx.apps.googleusercontent.com">
+                        </div>
+                        <div class="form-group">
+                            <label for="google_client_secret">Google Client Secret</label>
+                            <input type="password" id="google_client_secret" name="google_client_secret" value="{{ settings.GOOGLE_CLIENT_SECRET or '' }}" placeholder="GOCSPX-xxxxx">
+                        </div>
+                        <div class="form-hint">
+                            <strong>Redirect URI:</strong> <code id="google-redirect">{{ settings.BASE_URL.rstrip('/') }}/oauth/google/callback</code><br>
+                            <a href="https://console.cloud.google.com/apis/credentials" target="_blank">Создать OAuth приложение →</a>
+                        </div>
+                    </div>
+                    
+                    <div style="margin: 2rem 0; padding: 1rem; background: var(--bg-secondary); border-radius: 8px;">
+                        <h4 style="margin-top: 0;">🟡 Yandex OAuth</h4>
+                        <div class="form-group">
+                            <label for="yandex_client_id">Yandex Client ID</label>
+                            <input type="text" id="yandex_client_id" name="yandex_client_id" value="{{ settings.YANDEX_CLIENT_ID or '' }}" placeholder="xxxxxxxxxxxxxxxxxxxxxxxx">
+                        </div>
+                        <div class="form-group">
+                            <label for="yandex_client_secret">Yandex Client Secret</label>
+                            <input type="password" id="yandex_client_secret" name="yandex_client_secret" value="{{ settings.YANDEX_CLIENT_SECRET or '' }}" placeholder="xxxxxxxxxxxxxxxxxxxxxxxx">
+                        </div>
+                        <div class="form-hint">
+                            <strong>Redirect URI:</strong> <code id="yandex-redirect">{{ settings.BASE_URL.rstrip('/') }}/oauth/yandex/callback</code><br>
+                            <a href="https://oauth.yandex.ru/" target="_blank">Создать OAuth приложение →</a>
+                        </div>
+                    </div>
+                    
+                    <div style="margin: 2rem 0; padding: 1rem; background: var(--bg-secondary); border-radius: 8px;">
+                        <h4 style="margin-top: 0;">🔴 VK OAuth</h4>
+                        <div class="form-group">
+                            <label for="vk_client_id">VK Client ID (Application ID)</label>
+                            <input type="text" id="vk_client_id" name="vk_client_id" value="{{ settings.VK_CLIENT_ID or '' }}" placeholder="12345678">
+                        </div>
+                        <div class="form-group">
+                            <label for="vk_client_secret">VK Client Secret (Secure Key)</label>
+                            <input type="password" id="vk_client_secret" name="vk_client_secret" value="{{ settings.VK_CLIENT_SECRET or '' }}" placeholder="xxxxxxxxxxxxxxxxxxxxxxxx">
+                        </div>
+                        <div class="form-hint">
+                            <strong>Redirect URI:</strong> <code id="vk-redirect">{{ settings.BASE_URL.rstrip('/') }}/oauth/vk/callback</code><br>
+                            <a href="https://dev.vk.com/apps?act=manage" target="_blank">Создать OAuth приложение →</a>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">Сохранить OAuth настройки</button>
+                    <button type="button" onclick="checkOAuth()" class="btn btn-outline" style="margin-left: 0.5rem;">Проверить конфигурацию</button>
+                </form>
+                
+                <div id="oauth-status" style="margin-top: 1.5rem;"></div>
             </div>
         </div>
         
@@ -118,41 +180,60 @@
 </div>
 
 <script>
+// Update redirect URIs when base_url changes
+document.getElementById('base_url')?.addEventListener('input', function() {
+    const baseUrl = this.value.trim().replace(/\/$/, '');
+    if (baseUrl) {
+        document.getElementById('google-redirect').textContent = baseUrl + '/oauth/google/callback';
+        document.getElementById('yandex-redirect').textContent = baseUrl + '/oauth/yandex/callback';
+        document.getElementById('vk-redirect').textContent = baseUrl + '/oauth/vk/callback';
+    }
+});
+
 async function checkOAuth() {
     const statusDiv = document.getElementById('oauth-status');
-    statusDiv.innerHTML = 'Проверка...';
+    statusDiv.innerHTML = '<div style="padding: 1rem; background: var(--bg-secondary); border-radius: 8px;">Проверка...</div>';
     
     try {
         const response = await fetch('/api/admin/oauth/check');
         const data = await response.json();
         
-        let html = `<div style="font-size: 0.9rem;">`;
+        let html = `<div style="font-size: 0.9rem; padding: 1rem; background: var(--bg-secondary); border-radius: 8px;">`;
         html += `<p><strong>Base URL:</strong> ${data.base_url}</p>`;
         
+        let allConfigured = true;
         for (const [provider, config] of Object.entries(data.providers)) {
             const providerName = provider.charAt(0).toUpperCase() + provider.slice(1);
             const status = config.configured ? '✅' : '❌';
-            html += `<div style="margin: 1rem 0; padding: 1rem; background: var(--bg-secondary); border-radius: 8px;">`;
+            if (!config.configured) allConfigured = false;
+            
+            html += `<div style="margin: 1rem 0; padding: 1rem; background: rgba(0,0,0,0.1); border-radius: 8px;">`;
             html += `<strong>${status} ${providerName}</strong><br>`;
             if (config.configured) {
-                html += `Client ID: ${config.client_id}<br>`;
+                html += `<span style="color: var(--success);">Настроен</span><br>`;
             } else {
                 html += `<span style="color: var(--error);">Не настроен</span><br>`;
             }
-            html += `Redirect URI: <code style="background: rgba(0,0,0,0.1); padding: 2px 6px; border-radius: 4px;">${config.redirect_uri}</code><br>`;
-            html += `<a href="${config.setup_url}" target="_blank" style="color: var(--accent); font-size: 0.85rem;">${config.instructions} →</a>`;
+            html += `Redirect URI: <code style="background: rgba(0,0,0,0.2); padding: 2px 6px; border-radius: 4px; font-size: 0.85rem;">${config.redirect_uri}</code><br>`;
+            html += `<a href="${config.setup_url}" target="_blank" style="color: var(--accent); font-size: 0.85rem; margin-top: 0.5rem; display: inline-block;">${config.instructions} →</a>`;
             html += `</div>`;
+        }
+        
+        if (allConfigured) {
+            html += `<div style="margin-top: 1rem; padding: 1rem; background: rgba(0,255,0,0.1); border-radius: 8px; color: var(--success);">✅ Все OAuth провайдеры настроены!</div>`;
         }
         
         html += `</div>`;
         statusDiv.innerHTML = html;
     } catch (error) {
-        statusDiv.innerHTML = `<div style="color: var(--error);">Ошибка: ${error.message}</div>`;
+        statusDiv.innerHTML = `<div style="color: var(--error); padding: 1rem; background: var(--bg-secondary); border-radius: 8px;">Ошибка: ${error.message}</div>`;
     }
 }
 
 // Автоматическая проверка при загрузке
-window.addEventListener('load', checkOAuth);
+window.addEventListener('load', function() {
+    setTimeout(checkOAuth, 500);
+});
 </script>
 
 <style>

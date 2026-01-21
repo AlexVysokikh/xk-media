@@ -2,6 +2,9 @@
 HTML pages routes using Jinja2 templates.
 """
 
+import os
+import re
+from pathlib import Path
 from datetime import datetime, date
 from decimal import Decimal
 
@@ -1867,11 +1870,17 @@ async def admin_settings(request: Request, success: str = None, user: User = Dep
     privacy = db.query(SiteSettings).filter(SiteSettings.key == "privacy").first()
     
     success_message = None
+    error_message = None
     if success == "saved":
         success_message = "✓ Настройки сохранены"
+    elif success == "oauth_saved":
+        success_message = "✓ OAuth настройки сохранены. Перезапустите приложение для применения изменений."
+    elif success == "oauth_save_failed":
+        error_message = "✗ Ошибка сохранения OAuth настроек"
     
     return templates.TemplateResponse("admin_settings.html", {
-        "request": request, "user": user, "offer": offer, "privacy": privacy, "success": success_message
+        "request": request, "user": user, "offer": offer, "privacy": privacy, 
+        "success": success_message, "error": error_message, "settings": settings
     })
 
 
@@ -1891,6 +1900,93 @@ async def admin_settings_offer(request: Request, user: User = Depends(require_ro
     offer.is_active = "is_active" in form
     
     db.commit()
+    return RedirectResponse(url="/admin/settings?success=saved", status_code=303)
+
+
+def update_env_file(env_vars: dict) -> bool:
+    """Update .env file with new variables."""
+    try:
+        # Find .env file (check current directory and parent directories)
+        env_path = Path(".env")
+        if not env_path.exists():
+            # Try parent directory (for production deployment)
+            env_path = Path("/var/www/xk-media-backend/.env")
+            if not env_path.exists():
+                env_path = Path(__file__).parent.parent.parent / ".env"
+        
+        if not env_path.exists():
+            # Create new .env file
+            env_path.touch()
+        
+        # Read existing content
+        content = env_path.read_text(encoding="utf-8") if env_path.exists() else ""
+        
+        # Update or add each variable
+        for key, value in env_vars.items():
+            if value is None or value == "":
+                continue  # Skip empty values
+            
+            # Escape value if needed
+            escaped_value = str(value).replace('"', '\\"')
+            if ' ' in escaped_value or '#' in escaped_value or '$' in escaped_value:
+                escaped_value = f'"{escaped_value}"'
+            
+            # Pattern to match existing variable
+            pattern = rf'^{re.escape(key)}\s*=\s*.*$'
+            
+            if re.search(pattern, content, re.MULTILINE):
+                # Update existing variable
+                content = re.sub(pattern, f'{key}={escaped_value}', content, flags=re.MULTILINE)
+            else:
+                # Add new variable at the end
+                if content and not content.endswith('\n'):
+                    content += '\n'
+                content += f'{key}={escaped_value}\n'
+        
+        # Write back to file
+        env_path.write_text(content, encoding="utf-8")
+        return True
+    except Exception as e:
+        print(f"Error updating .env file: {e}")
+        return False
+
+
+@router.post("/admin/settings/oauth", response_class=HTMLResponse)
+async def admin_settings_oauth(request: Request, user: User = Depends(require_role_for_page(Role.ADMIN))):
+    """Save OAuth settings to .env file."""
+    form = await request.form()
+    
+    env_updates = {}
+    
+    # Google OAuth
+    if form.get("google_client_id"):
+        env_updates["GOOGLE_CLIENT_ID"] = form.get("google_client_id")
+    if form.get("google_client_secret"):
+        env_updates["GOOGLE_CLIENT_SECRET"] = form.get("google_client_secret")
+    
+    # Yandex OAuth
+    if form.get("yandex_client_id"):
+        env_updates["YANDEX_CLIENT_ID"] = form.get("yandex_client_id")
+    if form.get("yandex_client_secret"):
+        env_updates["YANDEX_CLIENT_SECRET"] = form.get("yandex_client_secret")
+    
+    # VK OAuth
+    if form.get("vk_client_id"):
+        env_updates["VK_CLIENT_ID"] = form.get("vk_client_id")
+    if form.get("vk_client_secret"):
+        env_updates["VK_CLIENT_SECRET"] = form.get("vk_client_secret")
+    
+    # Base URL
+    if form.get("base_url"):
+        env_updates["BASE_URL"] = form.get("base_url")
+    
+    if env_updates:
+        success = update_env_file(env_updates)
+        if success:
+            return RedirectResponse(url="/admin/settings?success=oauth_saved", status_code=303)
+        else:
+            return RedirectResponse(url="/admin/settings?error=oauth_save_failed", status_code=303)
+    
     return RedirectResponse(url="/admin/settings?success=saved", status_code=303)
 
 
