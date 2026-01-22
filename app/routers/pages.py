@@ -201,6 +201,41 @@ async def choose_role_save(
     return RedirectResponse(url=redirect_url, status_code=303)
 
 
+@router.post("/switch-role", response_class=HTMLResponse)
+async def switch_role(
+    request: Request,
+    role: str = Form(...),
+    user: User = Depends(get_current_user_from_cookie),
+    db: Session = Depends(get_db),
+):
+    """Switch user role and redirect to appropriate dashboard."""
+    if not user:
+        return RedirectResponse(url="/login", status_code=303)
+    
+    # Admin cannot switch roles
+    if user.role == Role.ADMIN:
+        return RedirectResponse(url="/admin", status_code=303)
+    
+    # Validate role
+    if role not in [Role.ADVERTISER, Role.VENUE]:
+        # Redirect back to current dashboard
+        redirect_url = "/venue" if user.role == Role.VENUE else "/advertiser"
+        return RedirectResponse(url=redirect_url, status_code=303)
+    
+    # Don't switch if already in that role
+    if user.role == role:
+        redirect_url = "/venue" if role == Role.VENUE else "/advertiser"
+        return RedirectResponse(url=redirect_url, status_code=303)
+    
+    # Update user role
+    user.role = role
+    db.commit()
+    
+    # Redirect based on selected role
+    redirect_url = "/venue" if role == Role.VENUE else "/advertiser"
+    return RedirectResponse(url=redirect_url, status_code=303)
+
+
 @router.get("/register", response_class=HTMLResponse)
 async def register_page(request: Request, role: str = "advertiser", error: str = None, user: User = Depends(get_current_user_from_cookie), db: Session = Depends(get_db)):
     """Registration page."""

@@ -669,6 +669,20 @@
     {% block head %}{% endblock %}
 </head>
 <body>
+    {# Макрос для переключателя ролей #}
+    {% macro role_switcher(current_role) %}
+        {% if current_role == 'advertiser' %}
+        <form method="POST" action="/switch-role" style="display: inline-block; margin: 0;">
+            <input type="hidden" name="role" value="venue">
+            <button type="submit" class="btn btn-secondary btn-sm" style="background: rgba(131, 56, 236, 0.2); border-color: var(--accent-tertiary); color: var(--accent-tertiary);" title="Переключиться в кабинет площадки">📺 Площадка</button>
+        </form>
+        {% elif current_role == 'venue' %}
+        <form method="POST" action="/switch-role" style="display: inline-block; margin: 0;">
+            <input type="hidden" name="role" value="advertiser">
+            <button type="submit" class="btn btn-secondary btn-sm" style="background: rgba(0, 212, 255, 0.2); border-color: var(--accent); color: var(--accent);" title="Переключиться в кабинет рекламодателя">🎯 Рекламодатель</button>
+        </form>
+        {% endif %}
+    {% endmacro %}
     <header class="header">
         <div class="header-inner">
             {% block logo %}

@@ -126,6 +126,10 @@
 <a href="/advertiser/subscriptions">Подписки</a>
 <a href="/advertiser/payments" class="active">Платежи</a>
 <a href="/advertiser/profile">Профиль</a>
+<form method="POST" action="/switch-role" style="display: inline-block; margin: 0;">
+    <input type="hidden" name="role" value="venue">
+    <button type="submit" class="btn btn-secondary btn-sm" style="background: rgba(131, 56, 236, 0.2); border-color: var(--accent-tertiary); color: var(--accent-tertiary);" title="Переключиться в кабинет площадки">📺 Площадка</button>
+</form>
 <a href="/logout" class="btn btn-secondary btn-sm">Выйти</a>
 {% endblock %}
 
