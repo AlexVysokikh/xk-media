@@ -1632,6 +1632,14 @@ async def admin_tvs_add(
     photo_file: UploadFile = File(None)
 ):
     """Add new TV."""
+    # #region agent log
+    import json
+    try:
+        with open(".cursor/debug.log", "a", encoding="utf-8") as f:
+            f.write(json.dumps({"id": f"log_{int(datetime.now().timestamp() * 1000)}", "timestamp": int(datetime.now().timestamp() * 1000), "location": "pages.py:1627", "message": "admin_tvs_add entry", "data": {"has_photo_file": photo_file is not None, "photo_filename": photo_file.filename if photo_file else None}, "sessionId": "debug-session", "runId": "run1", "hypothesisId": "A"}) + "\n")
+    except: pass
+    # #endregion
+    
     form = await request.form()
     
     # Check if code exists
@@ -1644,8 +1652,22 @@ async def admin_tvs_add(
     
     # Если загружен файл, сохраняем его
     if photo_file and photo_file.filename:
+        # #region agent log
+        try:
+            with open(".cursor/debug.log", "a", encoding="utf-8") as f:
+                f.write(json.dumps({"id": f"log_{int(datetime.now().timestamp() * 1000)}", "timestamp": int(datetime.now().timestamp() * 1000), "location": "pages.py:1646", "message": "photo_file processing start", "data": {"filename": photo_file.filename, "content_type": photo_file.content_type}, "sessionId": "debug-session", "runId": "run1", "hypothesisId": "B"}) + "\n")
+        except: pass
+        # #endregion
+        
         upload_dir = Path("app/static/uploads")
         upload_dir.mkdir(parents=True, exist_ok=True)
+        
+        # #region agent log
+        try:
+            with open(".cursor/debug.log", "a", encoding="utf-8") as f:
+                f.write(json.dumps({"id": f"log_{int(datetime.now().timestamp() * 1000)}", "timestamp": int(datetime.now().timestamp() * 1000), "location": "pages.py:1650", "message": "upload_dir created", "data": {"upload_dir": str(upload_dir), "exists": upload_dir.exists()}, "sessionId": "debug-session", "runId": "run1", "hypothesisId": "E"}) + "\n")
+        except: pass
+        # #endregion
         
         # Генерируем уникальное имя файла
         import uuid
@@ -1653,12 +1675,43 @@ async def admin_tvs_add(
         file_name = f"tv_{code}_{uuid.uuid4().hex[:8]}{file_ext}"
         file_path = upload_dir / file_name
         
-        # Сохраняем файл
-        with open(file_path, "wb") as buffer:
-            content = await photo_file.read()
-            buffer.write(content)
+        # Проверка размера файла (макс 20MB)
+        max_size = 20 * 1024 * 1024  # 20 МБ
         
-        photo_url = f"/static/uploads/{file_name}"
+        # Сохраняем файл
+        try:
+            content = await photo_file.read()
+            file_size = len(content)
+            
+            # #region agent log
+            try:
+                with open(".cursor/debug.log", "a", encoding="utf-8") as f:
+                    f.write(json.dumps({"id": f"log_{int(datetime.now().timestamp() * 1000)}", "timestamp": int(datetime.now().timestamp() * 1000), "location": "pages.py:1665", "message": "file read", "data": {"file_size": file_size, "max_size": max_size, "file_size_mb": round(file_size / 1024 / 1024, 2)}, "sessionId": "debug-session", "runId": "run1", "hypothesisId": "C"}) + "\n")
+            except: pass
+            # #endregion
+            
+            if file_size > max_size:
+                return RedirectResponse(url=f"/admin/tvs?error=file_too_large&size={file_size}", status_code=303)
+            
+            with open(file_path, "wb") as buffer:
+                buffer.write(content)
+            
+            # #region agent log
+            try:
+                with open(".cursor/debug.log", "a", encoding="utf-8") as f:
+                    f.write(json.dumps({"id": f"log_{int(datetime.now().timestamp() * 1000)}", "timestamp": int(datetime.now().timestamp() * 1000), "location": "pages.py:1675", "message": "file saved", "data": {"file_path": str(file_path), "file_exists": file_path.exists()}, "sessionId": "debug-session", "runId": "run1", "hypothesisId": "E"}) + "\n")
+            except: pass
+            # #endregion
+            
+            photo_url = f"/static/uploads/{file_name}"
+        except Exception as e:
+            # #region agent log
+            try:
+                with open(".cursor/debug.log", "a", encoding="utf-8") as f:
+                    f.write(json.dumps({"id": f"log_{int(datetime.now().timestamp() * 1000)}", "timestamp": int(datetime.now().timestamp() * 1000), "location": "pages.py:1680", "message": "file save error", "data": {"error": str(e), "error_type": type(e).__name__}, "sessionId": "debug-session", "runId": "run1", "hypothesisId": "D"}) + "\n")
+            except: pass
+            # #endregion
+            raise
     
     tv = TV(
         code=code,
@@ -1718,6 +1771,14 @@ async def admin_tv_update(
     photo_file: UploadFile = File(None)
 ):
     """Update TV basic info."""
+    # #region agent log
+    import json
+    try:
+        with open(".cursor/debug.log", "a", encoding="utf-8") as f:
+            f.write(json.dumps({"id": f"log_{int(datetime.now().timestamp() * 1000)}", "timestamp": int(datetime.now().timestamp() * 1000), "location": "pages.py:1719", "message": "admin_tv_update entry", "data": {"tv_code": tv_code, "has_photo_file": photo_file is not None, "photo_filename": photo_file.filename if photo_file else None}, "sessionId": "debug-session", "runId": "run1", "hypothesisId": "A"}) + "\n")
+    except: pass
+    # #endregion
+    
     tv = db.query(TV).filter(TV.code == tv_code).first()
     if not tv:
         return RedirectResponse(url="/admin/tvs", status_code=303)
@@ -1735,8 +1796,22 @@ async def admin_tv_update(
     
     # Если загружен файл, сохраняем его
     if photo_file and photo_file.filename:
+        # #region agent log
+        try:
+            with open(".cursor/debug.log", "a", encoding="utf-8") as f:
+                f.write(json.dumps({"id": f"log_{int(datetime.now().timestamp() * 1000)}", "timestamp": int(datetime.now().timestamp() * 1000), "location": "pages.py:1740", "message": "photo_file processing start", "data": {"filename": photo_file.filename, "content_type": photo_file.content_type}, "sessionId": "debug-session", "runId": "run1", "hypothesisId": "B"}) + "\n")
+        except: pass
+        # #endregion
+        
         upload_dir = Path("app/static/uploads")
         upload_dir.mkdir(parents=True, exist_ok=True)
+        
+        # #region agent log
+        try:
+            with open(".cursor/debug.log", "a", encoding="utf-8") as f:
+                f.write(json.dumps({"id": f"log_{int(datetime.now().timestamp() * 1000)}", "timestamp": int(datetime.now().timestamp() * 1000), "location": "pages.py:1746", "message": "upload_dir created", "data": {"upload_dir": str(upload_dir), "exists": upload_dir.exists()}, "sessionId": "debug-session", "runId": "run1", "hypothesisId": "E"}) + "\n")
+        except: pass
+        # #endregion
         
         # Генерируем уникальное имя файла
         import uuid
@@ -1744,17 +1819,54 @@ async def admin_tv_update(
         file_name = f"tv_{tv_code}_{uuid.uuid4().hex[:8]}{file_ext}"
         file_path = upload_dir / file_name
         
-        # Сохраняем файл
-        with open(file_path, "wb") as buffer:
-            content = await photo_file.read()
-            buffer.write(content)
+        # Проверка размера файла (макс 20MB)
+        max_size = 20 * 1024 * 1024  # 20 МБ
         
-        photo_url = f"/static/uploads/{file_name}"
+        try:
+            content = await photo_file.read()
+            file_size = len(content)
+            
+            # #region agent log
+            try:
+                with open(".cursor/debug.log", "a", encoding="utf-8") as f:
+                    f.write(json.dumps({"id": f"log_{int(datetime.now().timestamp() * 1000)}", "timestamp": int(datetime.now().timestamp() * 1000), "location": "pages.py:1762", "message": "file read", "data": {"file_size": file_size, "max_size": max_size, "file_size_mb": round(file_size / 1024 / 1024, 2)}, "sessionId": "debug-session", "runId": "run1", "hypothesisId": "C"}) + "\n")
+            except: pass
+            # #endregion
+            
+            if file_size > max_size:
+                return RedirectResponse(url=f"/admin/tv/{tv_code}?error=file_too_large&size={file_size}", status_code=303)
+            
+            with open(file_path, "wb") as buffer:
+                buffer.write(content)
+            
+            # #region agent log
+            try:
+                with open(".cursor/debug.log", "a", encoding="utf-8") as f:
+                    f.write(json.dumps({"id": f"log_{int(datetime.now().timestamp() * 1000)}", "timestamp": int(datetime.now().timestamp() * 1000), "location": "pages.py:1773", "message": "file saved", "data": {"file_path": str(file_path), "file_exists": file_path.exists()}, "sessionId": "debug-session", "runId": "run1", "hypothesisId": "E"}) + "\n")
+            except: pass
+            # #endregion
+            
+            photo_url = f"/static/uploads/{file_name}"
+        except Exception as e:
+            # #region agent log
+            try:
+                with open(".cursor/debug.log", "a", encoding="utf-8") as f:
+                    f.write(json.dumps({"id": f"log_{int(datetime.now().timestamp() * 1000)}", "timestamp": int(datetime.now().timestamp() * 1000), "location": "pages.py:1779", "message": "file save error", "data": {"error": str(e), "error_type": type(e).__name__}, "sessionId": "debug-session", "runId": "run1", "hypothesisId": "D"}) + "\n")
+            except: pass
+            # #endregion
+            raise
     
     if photo_url is not None:
         tv.photo_url = photo_url
     
     db.commit()
+    
+    # #region agent log
+    try:
+        with open(".cursor/debug.log", "a", encoding="utf-8") as f:
+            f.write(json.dumps({"id": f"log_{int(datetime.now().timestamp() * 1000)}", "timestamp": int(datetime.now().timestamp() * 1000), "location": "pages.py:1790", "message": "admin_tv_update success", "data": {"tv_code": tv.code, "photo_url": photo_url}, "sessionId": "debug-session", "runId": "run1", "hypothesisId": "A"}) + "\n")
+    except: pass
+    # #endregion
     
     return RedirectResponse(url=f"/admin/tv/{tv.code}", status_code=303)
 

@@ -70,7 +70,7 @@ server {
     add_header X-XSS-Protection "1; mode=block" always;
 
     # Max upload size
-    client_max_body_size 10M;
+    client_max_body_size 50M;
 
     # Static files
     location /static {

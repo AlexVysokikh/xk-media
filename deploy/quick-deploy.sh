@@ -70,7 +70,7 @@ server {
     listen 80;
     server_name xk-media.ru www.xk-media.ru;
     
-    client_max_body_size 10M;
+    client_max_body_size 50M;
     
     location /static {
         alias /opt/xk-media/app/static;
