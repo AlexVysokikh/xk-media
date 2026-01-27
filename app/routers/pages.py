@@ -1519,6 +1519,47 @@ async def admin_user_unblock(request: Request, user_id: int, user: User = Depend
     return RedirectResponse(url=f"/admin/user/{user_id}", status_code=303)
 
 
+@router.get("/admin/user/{user_id}/delete", response_class=HTMLResponse)
+async def admin_user_delete(request: Request, user_id: int, user: User = Depends(require_role_for_page(Role.ADMIN)), db: Session = Depends(get_db)):
+    """Delete user account and all related data."""
+    target_user = db.query(User).filter(User.id == user_id).first()
+    if not target_user:
+        return RedirectResponse(url="/admin/users", status_code=303)
+    
+    # Нельзя удалить админа
+    if target_user.role == Role.ADMIN:
+        return RedirectResponse(url=f"/admin/user/{user_id}?error=cannot_delete_admin", status_code=303)
+    
+    # Удаляем все связанные данные
+    # Подписки
+    db.query(Subscription).filter(Subscription.advertiser_id == user_id).delete()
+    
+    # Рекламные ссылки
+    db.query(TVLink).filter(TVLink.advertiser_id == user_id).delete()
+    
+    # Платежи
+    db.query(Payment).filter(Payment.user_id == user_id).delete()
+    
+    # ТВ, принадлежащие площадке
+    if target_user.role == Role.VENUE:
+        venue_tvs = db.query(TV).filter(TV.venue_id == user_id).all()
+        for tv in venue_tvs:
+            # Удаляем ссылки и подписки на эти ТВ
+            db.query(TVLink).filter(TVLink.tv_id == tv.id).delete()
+            db.query(Subscription).filter(Subscription.tv_id == tv.id).delete()
+            db.query(VenuePayout).filter(VenuePayout.tv_id == tv.id).delete()
+            db.delete(tv)
+        
+        # Выплаты площадке
+        db.query(VenuePayout).filter(VenuePayout.venue_id == user_id).delete()
+    
+    # Удаляем пользователя
+    db.delete(target_user)
+    db.commit()
+    
+    return RedirectResponse(url="/admin/users?deleted=1", status_code=303)
+
+
 @router.get("/admin/advertisers/add", response_class=HTMLResponse)
 async def admin_advertiser_add_page(request: Request, error: str = None, user: User = Depends(require_role_for_page(Role.ADMIN)), db: Session = Depends(get_db)):
     """Add advertiser page."""
@@ -1583,7 +1624,12 @@ async def admin_tvs_list(request: Request, user: User = Depends(require_role_for
 
 
 @router.post("/admin/tvs/add", response_class=HTMLResponse)
-async def admin_tvs_add(request: Request, user: User = Depends(require_role_for_page(Role.ADMIN)), db: Session = Depends(get_db)):
+async def admin_tvs_add(
+    request: Request,
+    user: User = Depends(require_role_for_page(Role.ADMIN)),
+    db: Session = Depends(get_db),
+    photo_file: UploadFile = File(None)
+):
     """Add new TV."""
     form = await request.form()
     
@@ -1591,6 +1637,29 @@ async def admin_tvs_add(request: Request, user: User = Depends(require_role_for_
     code = form.get("code", "").strip()
     if db.query(TV).filter(TV.code == code).first():
         return RedirectResponse(url="/admin/tvs?error=code_exists", status_code=303)
+    
+    # Обработка фото
+    photo_url = form.get("photo_url", "").strip() or None
+    
+    # Если загружен файл, сохраняем его
+    if photo_file and photo_file.filename:
+        from pathlib import Path
+        import uuid
+        
+        upload_dir = Path("app/static/uploads")
+        upload_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Генерируем уникальное имя файла
+        file_ext = Path(photo_file.filename).suffix
+        file_name = f"tv_{code}_{uuid.uuid4().hex[:8]}{file_ext}"
+        file_path = upload_dir / file_name
+        
+        # Сохраняем файл
+        with open(file_path, "wb") as buffer:
+            content = await photo_file.read()
+            buffer.write(content)
+        
+        photo_url = f"/static/uploads/{file_name}"
     
     tv = TV(
         code=code,
@@ -1607,6 +1676,7 @@ async def admin_tvs_add(request: Request, user: User = Depends(require_role_for_
         contact_phone=form.get("contact_phone") or None,
         contact_email=form.get("contact_email") or None,
         description=form.get("description") or None,
+        photo_url=photo_url,
         is_active=True
     )
     db.add(tv)
@@ -1641,7 +1711,13 @@ async def admin_tv_detail(request: Request, tv_code: str, user: User = Depends(r
 
 
 @router.post("/admin/tv/{tv_code}", response_class=HTMLResponse)
-async def admin_tv_update(request: Request, tv_code: str, user: User = Depends(require_role_for_page(Role.ADMIN)), db: Session = Depends(get_db)):
+async def admin_tv_update(
+    request: Request,
+    tv_code: str,
+    user: User = Depends(require_role_for_page(Role.ADMIN)),
+    db: Session = Depends(get_db),
+    photo_file: UploadFile = File(None)
+):
     """Update TV basic info."""
     tv = db.query(TV).filter(TV.code == tv_code).first()
     if not tv:
@@ -1654,6 +1730,33 @@ async def admin_tv_update(request: Request, tv_code: str, user: User = Depends(r
     tv.target_audience = form.get("target_audience", tv.target_audience)
     tv.description = form.get("description") or None
     tv.is_active = "is_active" in form
+    
+    # Обработка фото
+    photo_url = form.get("photo_url", "").strip() or None
+    
+    # Если загружен файл, сохраняем его
+    if photo_file and photo_file.filename:
+        from pathlib import Path
+        import uuid
+        
+        upload_dir = Path("app/static/uploads")
+        upload_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Генерируем уникальное имя файла
+        file_ext = Path(photo_file.filename).suffix
+        file_name = f"tv_{tv_code}_{uuid.uuid4().hex[:8]}{file_ext}"
+        file_path = upload_dir / file_name
+        
+        # Сохраняем файл
+        with open(file_path, "wb") as buffer:
+            content = await photo_file.read()
+            buffer.write(content)
+        
+        photo_url = f"/static/uploads/{file_name}"
+    
+    if photo_url is not None:
+        tv.photo_url = photo_url
+    
     db.commit()
     
     return RedirectResponse(url=f"/admin/tv/{tv.code}", status_code=303)

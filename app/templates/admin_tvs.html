@@ -68,10 +68,17 @@
                     <code style="background: var(--secondary); padding: 0.25rem 0.5rem; border-radius: 4px;">{{ tv.code }}</code>
                 </td>
                 <td>
-                    <div style="font-weight: 600;">{{ tv.name }}</div>
-                    {% if tv.venue_name %}
-                    <div style="font-size: 0.875rem; color: var(--text-muted);">{{ tv.venue_name }}</div>
-                    {% endif %}
+                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                        {% if tv.photo_url %}
+                        <img src="{{ tv.photo_url }}" alt="{{ tv.name }}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border);">
+                        {% endif %}
+                        <div>
+                            <div style="font-weight: 600;">{{ tv.name }}</div>
+                            {% if tv.venue_name %}
+                            <div style="font-size: 0.875rem; color: var(--text-muted);">{{ tv.venue_name }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
                 </td>
                 <td>
                     <span class="badge badge-info">{{ categories.get(tv.category, tv.category) }}</span>
@@ -132,7 +139,7 @@
             </button>
         </div>
         
-        <form method="POST" action="/admin/tvs/add">
+        <form method="POST" action="/admin/tvs/add" enctype="multipart/form-data">
             <!-- Основное -->
             <h4 style="margin: 1rem 0 0.75rem; color: var(--text-muted); font-size: 0.875rem;">ОСНОВНОЕ</h4>
             <div class="grid grid-2">
@@ -220,6 +227,19 @@
             <div class="form-group">
                 <label class="form-label">Описание</label>
                 <textarea name="description" class="form-input" rows="2" placeholder="Дополнительная информация о ТВ..."></textarea>
+            </div>
+            
+            <!-- Фото экрана -->
+            <h4 style="margin: 1rem 0 0.75rem; color: var(--text-muted); font-size: 0.875rem;">ФОТО ЭКРАНА</h4>
+            <div class="form-group">
+                <label class="form-label">URL фото экрана</label>
+                <input type="url" name="photo_url" class="form-input" placeholder="https://example.com/tv-photo.jpg">
+                <small style="color: var(--text-muted);">Ссылка на фото ТВ-экрана или загрузите файл ниже</small>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Или загрузите файл</label>
+                <input type="file" name="photo_file" accept="image/*" class="form-input">
+                <small style="color: var(--text-muted);">JPG, PNG, до 5 МБ</small>
             </div>
             
             <div style="display: flex; gap: 1rem; margin-top: 1rem;">

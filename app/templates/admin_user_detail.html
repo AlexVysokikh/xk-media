@@ -37,6 +37,9 @@
         {% else %}
         <a href="/admin/user/{{ target_user.id }}/unblock" class="btn btn-primary btn-sm">Разблокировать</a>
         {% endif %}
+        {% if target_user.role != 'admin' %}
+        <a href="/admin/user/{{ target_user.id }}/delete" class="btn btn-secondary btn-sm" style="color: var(--accent);" onclick="return confirm('ВНИМАНИЕ! Удаление аккаунта необратимо. Будут удалены все связанные данные: подписки, рекламные ссылки, платежи. Продолжить?')">🗑 Удалить аккаунт</a>
+        {% endif %}
     </div>
 </div>
 
