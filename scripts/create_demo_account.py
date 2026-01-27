@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 from app.db import SessionLocal, init_db
 from app.models import (
     User, Role, TV, TVLink, Subscription, Payment, PaymentStatus,
-    VenueCategory, TargetAudience, EquipmentType
+    VenueCategory, TargetAudience, EquipmentType, VenuePayout
 )
 from app.security import get_password_hash
 from app.services.auth_service import AuthService
@@ -128,8 +128,11 @@ def create_demo_account():
                 db.query(TVLink).filter(TVLink.tv_id == old_tv.id).delete()
                 db.query(Subscription).filter(Subscription.tv_id == old_tv.id).delete()
                 db.delete(old_tv)
+            
+            # Удаляем старые выплаты площадке
+            db.query(VenuePayout).filter(VenuePayout.venue_id == venue.id).delete()
             db.commit()
-            print(f"[OK] Удалены старые ТВ-точки площадки")
+            print(f"[OK] Удалены старые ТВ-точки и выплаты площадки")
         
         # 3. Создаем 4 ТВ-точки с типом VENUE (70% выплата)
         print("[*] Создаю 4 ТВ-точки для площадки...")
@@ -395,6 +398,53 @@ def create_demo_account():
         print(f"   [*] Каждый платит: 7,000 RUB")
         print(f"   [*] Выплата площадке (70%): 4,900 RUB с каждого")
         print(f"   [*] Общий доход площадки: {venue_total_revenue:,.0f} RUB")
+        
+        # 7. Создаем записи о выплатах площадке (VenuePayout)
+        print("[*] Создаю записи о выплатах площадке...")
+        
+        # Часть выплат уже выплачена (paid), часть в ожидании (pending)
+        # 10 выплат по 4,900 = 49,000 (выплачено)
+        # 5 выплат по 4,900 = 24,500 (к выплате)
+        paid_payouts_count = 10
+        pending_payouts_count = 5
+        
+        # Выплаченные выплаты (за прошлые периоды)
+        for i in range(paid_payouts_count):
+            payout = VenuePayout(
+                venue_id=venue.id,
+                tv_id=tvs[0].id,
+                period_start=date.today() - timedelta(days=60 - i*5),
+                period_end=date.today() - timedelta(days=30 - i*5),
+                amount=Decimal("4900.00"),
+                status="paid",
+                payment_details="Перечислено на расчетный счет",
+                created_at=datetime.utcnow() - timedelta(days=30 - i*5),
+                paid_at=datetime.utcnow() - timedelta(days=30 - i*5)
+            )
+            db.add(payout)
+        
+        # Выплаты в ожидании (pending)
+        for i in range(pending_payouts_count):
+            payout = VenuePayout(
+                venue_id=venue.id,
+                tv_id=tvs[0].id,
+                period_start=date.today() - timedelta(days=20 - i*3),
+                period_end=date.today() - timedelta(days=5 - i*3),
+                amount=Decimal("4900.00"),
+                status="pending",
+                payment_details="Ожидает выплаты",
+                created_at=datetime.utcnow() - timedelta(days=5 - i*3)
+            )
+            db.add(payout)
+        
+        db.flush()
+        total_paid = Decimal("4900.00") * paid_payouts_count
+        total_pending = Decimal("4900.00") * pending_payouts_count
+        print(f"[OK] Создано {paid_payouts_count} выплаченных выплат: {total_paid:,.0f} RUB")
+        print(f"[OK] Создано {pending_payouts_count} выплат к выплате: {total_pending:,.0f} RUB")
+        print(f"   [*] Всего заработано: {venue_total_revenue:,.0f} RUB")
+        print(f"   [*] Выплачено: {total_paid:,.0f} RUB")
+        print(f"   [*] К выплате: {total_pending:,.0f} RUB")
         
         # 7. Создаем дополнительные платежи (пополнение баланса)
         print("[*] Создаю историю платежей...")
