@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}XK Media — Цифровой агрегатор рекламы{% endblock %}
+{% block title %}XK Media — Цифровая платформа для рекламы{% endblock %}
 
 {% block head %}
 <style>
@@ -25,20 +25,14 @@
         margin-bottom: 1.5rem;
         line-height: 1.1;
         letter-spacing: -0.03em;
+        color: var(--text);
     }
 
     .hero h1 .gradient-text {
-        background: linear-gradient(135deg, var(--accent), var(--accent-secondary), var(--accent-tertiary));
+        background: linear-gradient(135deg, var(--accent), var(--accent-tertiary));
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
-        animation: gradientShift 5s ease infinite;
-        background-size: 200% 200%;
-    }
-
-    @keyframes gradientShift {
-        0%, 100% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
     }
 
     .hero .subtitle {
@@ -68,10 +62,7 @@
         font-size: clamp(2rem, 5vw, 3rem);
         font-weight: 900;
         margin-bottom: 1rem;
-        background: linear-gradient(135deg, var(--text), var(--accent));
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
+        color: var(--text);
     }
 
     .section-subtitle {
@@ -92,24 +83,6 @@
         height: 100%;
     }
 
-    .feature-card::after {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(131, 56, 236, 0.1));
-        opacity: 0;
-        transition: opacity 0.4s;
-        border-radius: 16px;
-        pointer-events: none;
-    }
-
-    .feature-card:hover::after {
-        opacity: 1;
-    }
-
     .feature-card:hover {
         transform: translateY(-8px) scale(1.02);
         border-color: var(--border-hover);
@@ -119,21 +92,6 @@
         font-size: 4rem;
         margin-bottom: 1.5rem;
         display: inline-block;
-        filter: drop-shadow(0 0 20px rgba(0, 212, 255, 0.3));
-        animation: float 3s ease-in-out infinite;
-    }
-
-    @keyframes float {
-        0%, 100% { transform: translateY(0px); }
-        50% { transform: translateY(-10px); }
-    }
-
-    .feature-card:nth-child(2) .feature-icon {
-        animation-delay: 0.5s;
-    }
-
-    .feature-card:nth-child(3) .feature-icon {
-        animation-delay: 1s;
     }
 
     .feature-card h3 {
@@ -149,30 +107,185 @@
         line-height: 1.7;
     }
 
+    /* Примеры данных */
+    .examples-section {
+        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+        border-radius: 24px;
+        padding: 4rem 2rem;
+        margin-bottom: 6rem;
+        border: 1px solid var(--border);
+    }
+
+    .examples-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+        margin-top: 3rem;
+    }
+
+    .example-card {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        border: 1px solid var(--border);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s;
+    }
+
+    .example-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+    }
+
+    .example-card h3 {
+        color: var(--accent);
+        font-size: 1.25rem;
+        margin-bottom: 1rem;
+        font-weight: 700;
+    }
+
+    .example-stats {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        margin-top: 1.5rem;
+    }
+
+    .stat-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem;
+        background: #f9fafb;
+        border-radius: 8px;
+    }
+
+    .stat-label {
+        color: var(--text-muted);
+        font-size: 0.9rem;
+    }
+
+    .stat-value {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--accent);
+        font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Инфографика */
+    .infographic-section {
+        background: white;
+        border-radius: 24px;
+        padding: 4rem 2rem;
+        margin-bottom: 6rem;
+        border: 1px solid var(--border);
+    }
+
+    .infographic-flow {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 2rem;
+        margin-top: 3rem;
+        position: relative;
+    }
+
+    .infographic-step {
+        flex: 1;
+        min-width: 200px;
+        text-align: center;
+        position: relative;
+    }
+
+    .infographic-step::after {
+        content: '→';
+        position: absolute;
+        right: -2rem;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 2rem;
+        color: var(--accent);
+        font-weight: 700;
+    }
+
+    .infographic-step:last-child::after {
+        display: none;
+    }
+
+    .infographic-icon {
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(135deg, var(--accent), var(--accent-tertiary));
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+        margin: 0 auto 1rem;
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+    }
+
+    .infographic-step h4 {
+        font-size: 1.125rem;
+        font-weight: 700;
+        color: var(--text);
+        margin-bottom: 0.5rem;
+    }
+
+    .infographic-step p {
+        color: var(--text-muted);
+        font-size: 0.9rem;
+    }
+
+    /* Пример точки */
+    .venue-example {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        margin-top: 2rem;
+        border: 1px solid var(--border);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .venue-example-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .venue-example-icon {
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, var(--accent), var(--accent-tertiary));
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+    }
+
+    .venue-example-info h4 {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--text);
+        margin-bottom: 0.25rem;
+    }
+
+    .venue-example-info p {
+        color: var(--text-muted);
+        font-size: 0.9rem;
+    }
+
     .advertiser-form-section {
-        background: linear-gradient(135deg, rgba(0, 212, 255, 0.05), rgba(131, 56, 236, 0.05));
+        background: linear-gradient(135deg, rgba(37, 99, 235, 0.03), rgba(59, 130, 246, 0.03));
         border-radius: 24px;
         border: 1px solid var(--border);
         padding: 4rem 2rem;
         margin-bottom: 6rem;
         position: relative;
         overflow: hidden;
-    }
-
-    .advertiser-form-section::before {
-        content: '';
-        position: absolute;
-        top: -50%;
-        left: -50%;
-        width: 200%;
-        height: 200%;
-        background: radial-gradient(circle, rgba(0, 212, 255, 0.1) 0%, transparent 70%);
-        animation: rotate 20s linear infinite;
-    }
-
-    @keyframes rotate {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
     }
 
     .advertiser-form-content {
@@ -202,7 +315,7 @@
     .form-group textarea {
         width: 100%;
         padding: 0.875rem 1.25rem;
-        background: var(--bg-secondary);
+        background: white;
         border: 1px solid var(--border);
         border-radius: 12px;
         color: var(--text);
@@ -214,7 +327,7 @@
     .form-group textarea:focus {
         outline: none;
         border-color: var(--accent);
-        box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
     }
 
     .form-group textarea {
@@ -225,23 +338,12 @@
     .venue-cta-section {
         text-align: center;
         padding: 6rem 2rem;
-        background: linear-gradient(135deg, rgba(131, 56, 236, 0.1), rgba(0, 212, 255, 0.1));
+        background: linear-gradient(135deg, rgba(37, 99, 235, 0.05), rgba(59, 130, 246, 0.05));
         border-radius: 24px;
         border: 2px solid var(--accent);
         margin-bottom: 6rem;
         position: relative;
         overflow: hidden;
-    }
-
-    .venue-cta-section::before {
-        content: '';
-        position: absolute;
-        top: -50%;
-        left: -50%;
-        width: 200%;
-        height: 200%;
-        background: radial-gradient(circle, rgba(131, 56, 236, 0.15) 0%, transparent 70%);
-        animation: rotate 25s linear infinite reverse;
     }
 
     .venue-cta-content {
@@ -254,27 +356,21 @@
         font-size: clamp(2.5rem, 6vw, 4.5rem);
         font-weight: 900;
         padding: 2.5rem 5rem;
-        background: linear-gradient(135deg, var(--accent), var(--accent-secondary), var(--accent-tertiary));
+        background: linear-gradient(135deg, var(--accent), var(--accent-tertiary));
         color: white;
         border-radius: 24px;
         text-decoration: none;
         transition: all 0.3s;
-        box-shadow: 0 15px 50px rgba(0, 212, 255, 0.4);
+        box-shadow: 0 15px 50px rgba(37, 99, 235, 0.3);
         margin-bottom: 2rem;
         text-transform: uppercase;
         letter-spacing: 0.15em;
-        animation: pulse 2s ease-in-out infinite;
         border: 3px solid rgba(255, 255, 255, 0.2);
     }
 
-    @keyframes pulse {
-        0%, 100% { transform: scale(1); box-shadow: 0 10px 40px rgba(0, 212, 255, 0.3); }
-        50% { transform: scale(1.05); box-shadow: 0 15px 50px rgba(0, 212, 255, 0.5); }
-    }
-
     .venue-cta-button:hover {
-        transform: scale(1.08);
-        box-shadow: 0 20px 60px rgba(0, 212, 255, 0.4);
+        transform: scale(1.05);
+        box-shadow: 0 20px 60px rgba(37, 99, 235, 0.4);
     }
 
     .venue-cta-description {
@@ -308,23 +404,23 @@
         text-align: center;
         padding: 2.5rem 2rem;
         position: relative;
-        background: var(--bg-secondary);
+        background: white;
         border-radius: 16px;
         border: 1px solid var(--border);
         transition: all 0.3s;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
     }
 
     .step:hover {
         transform: translateY(-5px);
         border-color: var(--accent);
-        box-shadow: 0 10px 30px rgba(0, 212, 255, 0.1);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
     }
 
     .step-icon {
         font-size: 3.5rem;
         margin-bottom: 1.5rem;
         display: inline-block;
-        filter: drop-shadow(0 0 15px rgba(0, 212, 255, 0.3));
     }
 
     .step h3 {
@@ -343,23 +439,12 @@
     .cta-section {
         text-align: center;
         padding: 6rem 2rem;
-        background: linear-gradient(135deg, rgba(0, 212, 255, 0.05), rgba(131, 56, 236, 0.05));
+        background: linear-gradient(135deg, rgba(37, 99, 235, 0.03), rgba(59, 130, 246, 0.03));
         border-radius: 24px;
         border: 1px solid var(--border);
         margin-bottom: 4rem;
         position: relative;
         overflow: hidden;
-    }
-
-    .cta-section::before {
-        content: '';
-        position: absolute;
-        top: -50%;
-        left: -50%;
-        width: 200%;
-        height: 200%;
-        background: radial-gradient(circle, rgba(0, 212, 255, 0.1) 0%, transparent 70%);
-        animation: rotate 20s linear infinite;
     }
 
     .cta-content {
@@ -371,10 +456,7 @@
         font-size: clamp(2rem, 5vw, 3rem);
         font-weight: 900;
         margin-bottom: 1rem;
-        background: linear-gradient(135deg, var(--accent), var(--accent-secondary));
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
+        color: var(--text);
     }
 
     .cta-section p {
@@ -387,12 +469,12 @@
     }
 
     .success-message {
-        background: rgba(0, 212, 255, 0.1);
-        border: 1px solid var(--accent);
+        background: rgba(16, 185, 129, 0.1);
+        border: 1px solid var(--success);
         border-radius: 12px;
         padding: 1rem;
         margin-top: 1rem;
-        color: var(--accent);
+        color: var(--success);
         display: none;
     }
 
@@ -421,6 +503,23 @@
         .advertiser-form-section {
             padding: 3rem 1.5rem;
         }
+
+        .infographic-flow {
+            flex-direction: column;
+        }
+
+        .infographic-step::after {
+            content: '↓';
+            right: auto;
+            bottom: -2rem;
+            top: auto;
+            transform: translateX(-50%);
+            left: 50%;
+        }
+
+        .examples-grid {
+            grid-template-columns: 1fr;
+        }
     }
 </style>
 {% endblock %}
@@ -429,8 +528,8 @@
 <div class="hero">
     <div class="hero-content">
         <h1>
-            <span class="gradient-text">Агрегатор</span><br>
-            рекламы нового поколения
+            <span class="gradient-text">Цифровая платформа</span><br>
+            для эффективной рекламы
         </h1>
         <p class="subtitle">
             Объединяем оффлайн и digital через ТВ-экраны, QR-коды и умную аналитику. 
@@ -443,6 +542,147 @@
             <a href="/register?role=venue" class="btn btn-outline btn-lg">
                 📺 Стать площадкой
             </a>
+        </div>
+    </div>
+</div>
+
+<!-- Примеры данных -->
+<div class="examples-section">
+    <h2 class="section-title">Реальные результаты наших клиентов</h2>
+    <p class="section-subtitle">Посмотрите, каких показателей достигают рекламодатели и площадки</p>
+    
+    <div class="examples-grid">
+        <div class="example-card">
+            <h3>📊 Рекламодатель</h3>
+            <div class="example-stats">
+                <div class="stat-item">
+                    <span class="stat-label">Активных ТВ</span>
+                    <span class="stat-value">4</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Показов</span>
+                    <span class="stat-value">171,900</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Переходов</span>
+                    <span class="stat-value">7,112</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Конверсия</span>
+                    <span class="stat-value">4.14%</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="example-card">
+            <h3>🏢 Площадка</h3>
+            <div class="example-stats">
+                <div class="stat-item">
+                    <span class="stat-label">ТВ-экранов</span>
+                    <span class="stat-value">4</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Рекламодателей</span>
+                    <span class="stat-value">16</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Всего заработано</span>
+                    <span class="stat-value">115,500 ₽</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">К выплате</span>
+                    <span class="stat-value">66,500 ₽</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="example-card">
+            <h3>📈 Эффективность</h3>
+            <div class="example-stats">
+                <div class="stat-item">
+                    <span class="stat-label">Средняя конверсия</span>
+                    <span class="stat-value">4.14%</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Средний CTR</span>
+                    <span class="stat-value">4.14%</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Активных кампаний</span>
+                    <span class="stat-value">12</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Площадок</span>
+                    <span class="stat-value">15+</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Пример точки -->
+    <div class="venue-example">
+        <div class="venue-example-header">
+            <div class="venue-example-icon">☕</div>
+            <div class="venue-example-info">
+                <h4>Кофейня «Уютная»</h4>
+                <p>Москва, ул. Тверская, д. 10, стр. 1</p>
+            </div>
+        </div>
+        <div class="example-stats">
+            <div class="stat-item">
+                <span class="stat-label">ТВ-экранов</span>
+                <span class="stat-value">4</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Рекламодателей</span>
+                <span class="stat-value">16</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Показов рекламы</span>
+                <span class="stat-value">171,900</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-label">Доход</span>
+                <span class="stat-value">115,500 ₽</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Инфографика -->
+<div class="infographic-section">
+    <h2 class="section-title">Как это работает?</h2>
+    <p class="section-subtitle">Простой путь от установки экрана до получения дохода</p>
+    
+    <div class="infographic-flow">
+        <div class="infographic-step">
+            <div class="infographic-icon">☕</div>
+            <h4>Кафе</h4>
+            <p>Установите ТВ-экран в вашем заведении</p>
+        </div>
+        
+        <div class="infographic-step">
+            <div class="infographic-icon">📺</div>
+            <h4>ТВ-экран</h4>
+            <p>Экран показывает рекламу вашим посетителям</p>
+        </div>
+        
+        <div class="infographic-step">
+            <div class="infographic-icon">📢</div>
+            <h4>Реклама</h4>
+            <p>Рекламодатели размещают свои объявления</p>
+        </div>
+        
+        <div class="infographic-step">
+            <div class="infographic-icon">👀</div>
+            <h4>Смотрят</h4>
+            <p>Посетители видят рекламу на экране</p>
+        </div>
+        
+        <div class="infographic-step">
+            <div class="infographic-icon">🛒</div>
+            <h4>Покупают</h4>
+            <p>Клиенты переходят по QR-коду и покупают услугу</p>
         </div>
     </div>
 </div>
@@ -491,7 +731,7 @@
             </div>
             {% endif %}
             {% if error_message %}
-            <div class="success-message show" style="background: rgba(255, 0, 0, 0.1); border-color: #ff0000; color: #ff0000;">
+            <div class="success-message show" style="background: rgba(239, 68, 68, 0.1); border-color: #ef4444; color: #ef4444;">
                 ❌ {{ error_message }}
             </div>
             {% endif %}
@@ -563,7 +803,7 @@
 </div>
 
 <div class="how-it-works">
-    <h2 class="section-title">Как это работает?</h2>
+    <h2 class="section-title">Как начать?</h2>
     <p class="section-subtitle">Простой процесс от регистрации до первых показов</p>
     
     <div class="steps">
@@ -596,7 +836,7 @@
 <div class="cta-section">
     <div class="cta-content">
         <h2>Готовы начать?</h2>
-        <p>Присоединяйтесь к цифровому агрегатору рекламы нового поколения</p>
+        <p>Присоединяйтесь к цифровой платформе для эффективной рекламы</p>
         <div class="hero-buttons">
             <a href="/register?role=advertiser" class="btn btn-primary btn-lg">
                 🎯 Стать рекламодателем
