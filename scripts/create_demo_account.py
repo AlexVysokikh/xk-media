@@ -39,49 +39,97 @@ def create_demo_account():
             print(f"[WARNING] Демо-аккаунт {demo_email} уже существует!")
             print(f"   ID: {existing_user.id}")
             print(f"   Роль: {existing_user.role}")
-            return
+            print(f"[*] Обновляю данные демо-аккаунта...")
+            
+            # Удаляем старые данные рекламодателя
+            from app.models import TVLink, Subscription, Payment
+            old_links = db.query(TVLink).filter(TVLink.advertiser_id == existing_user.id).all()
+            for link in old_links:
+                db.delete(link)
+            
+            old_subs = db.query(Subscription).filter(Subscription.advertiser_id == existing_user.id).all()
+            for sub in old_subs:
+                db.delete(sub)
+            
+            old_payments = db.query(Payment).filter(Payment.user_id == existing_user.id).all()
+            for pay in old_payments:
+                db.delete(pay)
+            
+            db.commit()
+            print(f"[OK] Удалены старые данные рекламодателя")
+            
+            advertiser = existing_user
+            # Обновляем данные рекламодателя
+            advertiser.balance = Decimal("50000.00")
+            advertiser.company_name = "ООО «Демо Реклама»"
+            advertiser.legal_name = "Общество с ограниченной ответственностью «Демо Реклама»"
+            advertiser.inn = "7701234567"
+            advertiser.website = "https://demo-reklama.ru"
+            advertiser.description = "Демонстрационный аккаунт для показа эффективности indoor-рекламы"
+            advertiser.is_verified = True
+        else:
+            advertiser = None
         
-        # 1. Создаем рекламодателя (демо-аккаунт)
-        print("[*] Создаю демо-аккаунт рекламодателя...")
-        advertiser = User(
-            email=demo_email,
-            hashed_password=get_password_hash(demo_password),
-            role=Role.ADVERTISER,
-            first_name="Демо",
-            last_name="Рекламодатель",
-            company_name="ООО «Демо Реклама»",
-            legal_name="Общество с ограниченной ответственностью «Демо Реклама»",
-            inn="7701234567",
-            website="https://demo-reklama.ru",
-            description="Демонстрационный аккаунт для показа эффективности indoor-рекламы",
-            is_active=True,
-            is_verified=True,
-            balance=Decimal("50000.00"),  # Начальный баланс
-            created_at=datetime.utcnow() - timedelta(days=90)  # Аккаунт создан 3 месяца назад
-        )
-        db.add(advertiser)
-        db.flush()
-        print(f"[OK] Создан рекламодатель: {advertiser.email} (ID: {advertiser.id})")
+        # 1. Создаем или обновляем рекламодателя (демо-аккаунт)
+        if not advertiser:
+            print("[*] Создаю демо-аккаунт рекламодателя...")
+            advertiser = User(
+                email=demo_email,
+                hashed_password=get_password_hash(demo_password),
+                role=Role.ADVERTISER,
+                first_name="Демо",
+                last_name="Рекламодатель",
+                company_name="ООО «Демо Реклама»",
+                legal_name="Общество с ограниченной ответственностью «Демо Реклама»",
+                inn="7701234567",
+                website="https://demo-reklama.ru",
+                description="Демонстрационный аккаунт для показа эффективности indoor-рекламы",
+                is_active=True,
+                is_verified=True,
+                balance=Decimal("50000.00"),  # Начальный баланс
+                created_at=datetime.utcnow() - timedelta(days=90)  # Аккаунт создан 3 месяца назад
+            )
+            db.add(advertiser)
+            db.flush()
+            print(f"[OK] Создан рекламодатель: {advertiser.email} (ID: {advertiser.id})")
+        else:
+            db.flush()
+            print(f"[OK] Обновлен рекламодатель: {advertiser.email} (ID: {advertiser.id})")
         
-        # 2. Создаем площадку (venue) с ТВ
-        print("[*] Создаю демо-площадку с ТВ...")
-        venue = User(
-            email="venue@demo-tv.ru",
-            hashed_password=get_password_hash("Venue2024!"),
-            role=Role.VENUE,
-            first_name="Иван",
-            last_name="Петров",
-            company_name="Кофейня «Уютная»",
-            legal_name="ИП Петров Иван Сергеевич",
-            inn="7701987654",
-            website="https://coffee-demo.ru",
-            is_active=True,
-            is_verified=True,
-            created_at=datetime.utcnow() - timedelta(days=120)
-        )
-        db.add(venue)
-        db.flush()
-        print(f"[OK] Создана площадка: {venue.company_name} (ID: {venue.id})")
+        # 2. Создаем или находим площадку (venue) с ТВ
+        print("[*] Проверяю демо-площадку...")
+        venue = db.query(User).filter(User.email == "venue@demo-tv.ru").first()
+        if not venue:
+            print("[*] Создаю демо-площадку...")
+            venue = User(
+                email="venue@demo-tv.ru",
+                hashed_password=get_password_hash("Venue2024!"),
+                role=Role.VENUE,
+                first_name="Иван",
+                last_name="Петров",
+                company_name="Кофейня «Уютная»",
+                legal_name="ИП Петров Иван Сергеевич",
+                inn="7701987654",
+                website="https://coffee-demo.ru",
+                is_active=True,
+                is_verified=True,
+                created_at=datetime.utcnow() - timedelta(days=120)
+            )
+            db.add(venue)
+            db.flush()
+            print(f"[OK] Создана площадка: {venue.company_name} (ID: {venue.id})")
+        else:
+            print(f"[OK] Найдена площадка: {venue.company_name} (ID: {venue.id})")
+            
+            # Удаляем старые ТВ и связанные данные
+            old_tvs = db.query(TV).filter(TV.venue_id == venue.id).all()
+            for old_tv in old_tvs:
+                # Удаляем ссылки и подписки
+                db.query(TVLink).filter(TVLink.tv_id == old_tv.id).delete()
+                db.query(Subscription).filter(Subscription.tv_id == old_tv.id).delete()
+                db.delete(old_tv)
+            db.commit()
+            print(f"[OK] Удалены старые ТВ-точки площадки")
         
         # 3. Создаем 4 ТВ-точки с типом VENUE (70% выплата)
         print("[*] Создаю 4 ТВ-точки для площадки...")
@@ -259,8 +307,8 @@ def create_demo_account():
         db.flush()
         print(f"[OK] Создано {len(tvs)} активных подписок для демо-рекламодателя")
         
-        # 6. Создаем 15 рекламодателей для площадки (по 7000 руб каждый, 70% = 4900 руб площадке)
-        print("[*] Создаю 15 рекламодателей для площадки...")
+        # 6. Создаем или обновляем 15 рекламодателей для площадки (по 7000 руб каждый, 70% = 4900 руб площадке)
+        print("[*] Проверяю рекламодателей для площадки...")
         
         advertiser_names = [
             "ООО «Стиль и Мода»", "ИП Иванов Сергей", "ООО «ТехноМарт»",
@@ -272,6 +320,20 @@ def create_demo_account():
         
         venue_total_revenue = Decimal("0.00")
         venue_subscriptions = []
+        
+        # Удаляем старых рекламодателей площадки (кроме демо-рекламодателя)
+        old_venue_advertisers = db.query(User).filter(
+            User.role == Role.ADVERTISER,
+            User.email.like("advertiser%@demo-tv.ru")
+        ).all()
+        for old_adv in old_venue_advertisers:
+            # Удаляем подписки и платежи
+            db.query(Subscription).filter(Subscription.advertiser_id == old_adv.id).delete()
+            db.query(Payment).filter(Payment.user_id == old_adv.id).delete()
+            db.query(TVLink).filter(TVLink.advertiser_id == old_adv.id).delete()
+            db.delete(old_adv)
+        db.commit()
+        print(f"[OK] Удалены старые рекламодатели площадки")
         
         for i, company_name in enumerate(advertiser_names):
             # Создаем рекламодателя
@@ -329,7 +391,7 @@ def create_demo_account():
             venue_subscriptions.append(subscription)
         
         db.flush()
-        print(f"[OK] Создано 15 рекламодателей для площадки")
+        print(f"[OK] Создано/обновлено 15 рекламодателей для площадки")
         print(f"   [*] Каждый платит: 7,000 RUB")
         print(f"   [*] Выплата площадке (70%): 4,900 RUB с каждого")
         print(f"   [*] Общий доход площадки: {venue_total_revenue:,.0f} RUB")
