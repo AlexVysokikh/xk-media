@@ -177,7 +177,7 @@
             <select name="advertiser_id" class="form-input" required>
                 <option value="">Выберите...</option>
                 {% for a in advertisers %}
-                <option value="{{ a.id }}">{{ a.company_name or a.first_name or a.email }}</option>
+                <option value="{{ a.id }}">{{ a.email }}{% if a.company_name %} ({{ a.company_name }}){% endif %}</option>
                 {% endfor %}
             </select>
         </div>
@@ -212,7 +212,7 @@
             {% for link in links %}
             <tr>
                 <td>{{ link.position + 1 }}</td>
-                <td>{{ link.advertiser_name or '—' }}</td>
+                <td>{{ link.advertiser.email if link.advertiser else (link.advertiser_name or '—') }}</td>
                 <td>
                     <div style="font-weight: 600;">{{ link.title }}</div>
                     <a href="{{ link.url }}" target="_blank" style="font-size: 0.75rem;">{{ link.url[:50] }}...</a>
@@ -265,7 +265,7 @@
             {% for s in subscriptions %}
             <tr>
                 <td>
-                    <a href="/admin/user/{{ s.advertiser_id }}">{{ s.advertiser.company_name or s.advertiser.email }}</a>
+                    <a href="/admin/user/{{ s.advertiser_id }}">{{ s.advertiser.email if s.advertiser else '—' }}</a>
                 </td>
                 <td>{{ s.start_date.strftime('%d.%m.%Y') }} — {{ s.end_date.strftime('%d.%m.%Y') }}</td>
                 <td>{{ "%.0f"|format(s.price) }} ₽</td>

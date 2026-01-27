@@ -41,7 +41,7 @@
                 <select name="advertiser_id" class="form-input">
                     {% for a in all_advertisers %}
                     <option value="{{ a.id }}" {% if a.id == link.advertiser_id %}selected{% endif %}>
-                        {{ a.company_name or a.first_name or a.email }}
+                        {{ a.email }}{% if a.company_name %} ({{ a.company_name }}){% endif %}
                     </option>
                     {% endfor %}
                 </select>

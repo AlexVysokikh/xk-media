@@ -1628,10 +1628,10 @@ async def admin_tv_detail(request: Request, tv_code: str, user: User = Depends(r
     if not tv:
         return RedirectResponse(url="/admin/tvs", status_code=303)
     
-    links = db.query(TVLink).filter(TVLink.tv_id == tv.id).order_by(TVLink.position).all()
+    links = db.query(TVLink).options(joinedload(TVLink.advertiser)).filter(TVLink.tv_id == tv.id).order_by(TVLink.position).all()
     advertisers = db.query(User).filter(User.role == Role.ADVERTISER).all()
     venues = db.query(User).filter(User.role == Role.VENUE).all()
-    subscriptions = db.query(Subscription).filter(Subscription.tv_id == tv.id).all()
+    subscriptions = db.query(Subscription).options(joinedload(Subscription.advertiser)).filter(Subscription.tv_id == tv.id).all()
     
     return templates.TemplateResponse("admin_tv_detail.html", {
         "request": request, "user": user, "tv": tv, "links": links,
@@ -1754,7 +1754,7 @@ async def admin_tv_advertisers(request: Request, tv_code: str, user: User = Depe
     if not tv:
         return RedirectResponse(url="/admin/tvs", status_code=303)
     
-    links = db.query(TVLink).filter(TVLink.tv_id == tv.id).order_by(TVLink.position).all()
+    links = db.query(TVLink).options(joinedload(TVLink.advertiser)).filter(TVLink.tv_id == tv.id).order_by(TVLink.position).all()
     all_advertisers = db.query(User).filter(User.role == Role.ADVERTISER).all()
     
     total_impressions = sum(l.impressions or 0 for l in links)
@@ -1800,7 +1800,7 @@ async def admin_tv_advertisers_add(request: Request, tv_code: str, user: User = 
 async def admin_tv_advertiser_edit_page(request: Request, tv_code: str, link_id: int, user: User = Depends(require_role_for_page(Role.ADMIN)), db: Session = Depends(get_db)):
     """Edit TV advertiser page."""
     tv = db.query(TV).filter(TV.code == tv_code).first()
-    link = db.query(TVLink).filter(TVLink.id == link_id).first()
+    link = db.query(TVLink).options(joinedload(TVLink.advertiser)).filter(TVLink.id == link_id).first()
     if not tv or not link:
         return RedirectResponse(url="/admin/tvs", status_code=303)
     
