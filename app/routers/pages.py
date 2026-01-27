@@ -4,6 +4,7 @@ HTML pages routes using Jinja2 templates.
 
 import os
 import re
+import shutil
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -1627,8 +1628,7 @@ async def admin_tvs_list(request: Request, user: User = Depends(require_role_for
 async def admin_tvs_add(
     request: Request,
     user: User = Depends(require_role_for_page(Role.ADMIN)),
-    db: Session = Depends(get_db),
-    photo_file: UploadFile = File(None)
+    db: Session = Depends(get_db)
 ):
     """Add new TV."""
     form = await request.form()
@@ -1642,24 +1642,31 @@ async def admin_tvs_add(
     photo_url = form.get("photo_url", "").strip() or None
     
     # Если загружен файл, сохраняем его
-    if photo_file and photo_file.filename:
-        from pathlib import Path
-        import uuid
-        
-        upload_dir = Path("app/static/uploads")
-        upload_dir.mkdir(parents=True, exist_ok=True)
-        
-        # Генерируем уникальное имя файла
-        file_ext = Path(photo_file.filename).suffix
-        file_name = f"tv_{code}_{uuid.uuid4().hex[:8]}{file_ext}"
-        file_path = upload_dir / file_name
-        
-        # Сохраняем файл
-        with open(file_path, "wb") as buffer:
-            content = await photo_file.read()
-            buffer.write(content)
-        
-        photo_url = f"/static/uploads/{file_name}"
+    if "photo_file" in form:
+        photo_file = form["photo_file"]
+        if photo_file and hasattr(photo_file, 'filename') and photo_file.filename:
+            from pathlib import Path
+            import uuid
+            
+            upload_dir = Path("app/static/uploads")
+            upload_dir.mkdir(parents=True, exist_ok=True)
+            
+            # Генерируем уникальное имя файла
+            file_ext = Path(photo_file.filename).suffix
+            file_name = f"tv_{code}_{uuid.uuid4().hex[:8]}{file_ext}"
+            file_path = upload_dir / file_name
+            
+            # Сохраняем файл
+            with open(file_path, "wb") as buffer:
+                if hasattr(photo_file, 'read'):
+                    content = await photo_file.read()
+                    buffer.write(content)
+                elif hasattr(photo_file, 'file'):
+                    shutil.copyfileobj(photo_file.file, buffer)
+                else:
+                    buffer.write(photo_file)
+            
+            photo_url = f"/static/uploads/{file_name}"
     
     tv = TV(
         code=code,
@@ -1715,8 +1722,7 @@ async def admin_tv_update(
     request: Request,
     tv_code: str,
     user: User = Depends(require_role_for_page(Role.ADMIN)),
-    db: Session = Depends(get_db),
-    photo_file: UploadFile = File(None)
+    db: Session = Depends(get_db)
 ):
     """Update TV basic info."""
     tv = db.query(TV).filter(TV.code == tv_code).first()
@@ -1735,24 +1741,31 @@ async def admin_tv_update(
     photo_url = form.get("photo_url", "").strip() or None
     
     # Если загружен файл, сохраняем его
-    if photo_file and photo_file.filename:
-        from pathlib import Path
-        import uuid
-        
-        upload_dir = Path("app/static/uploads")
-        upload_dir.mkdir(parents=True, exist_ok=True)
-        
-        # Генерируем уникальное имя файла
-        file_ext = Path(photo_file.filename).suffix
-        file_name = f"tv_{tv_code}_{uuid.uuid4().hex[:8]}{file_ext}"
-        file_path = upload_dir / file_name
-        
-        # Сохраняем файл
-        with open(file_path, "wb") as buffer:
-            content = await photo_file.read()
-            buffer.write(content)
-        
-        photo_url = f"/static/uploads/{file_name}"
+    if "photo_file" in form:
+        photo_file = form["photo_file"]
+        if photo_file and hasattr(photo_file, 'filename') and photo_file.filename:
+            from pathlib import Path
+            import uuid
+            
+            upload_dir = Path("app/static/uploads")
+            upload_dir.mkdir(parents=True, exist_ok=True)
+            
+            # Генерируем уникальное имя файла
+            file_ext = Path(photo_file.filename).suffix
+            file_name = f"tv_{tv_code}_{uuid.uuid4().hex[:8]}{file_ext}"
+            file_path = upload_dir / file_name
+            
+            # Сохраняем файл
+            with open(file_path, "wb") as buffer:
+                if hasattr(photo_file, 'read'):
+                    content = await photo_file.read()
+                    buffer.write(content)
+                elif hasattr(photo_file, 'file'):
+                    shutil.copyfileobj(photo_file.file, buffer)
+                else:
+                    buffer.write(photo_file)
+            
+            photo_url = f"/static/uploads/{file_name}"
     
     if photo_url is not None:
         tv.photo_url = photo_url
