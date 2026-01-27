@@ -83,203 +83,258 @@ def create_demo_account():
         db.flush()
         print(f"[OK] Создана площадка: {venue.company_name} (ID: {venue.id})")
         
-        # 3. Создаем ТВ с типом VENUE (70% выплата)
-        tv = TV(
-            code="DEMO001",
-            name="ТВ-экран в кофейне «Уютная»",
-            venue_name="Кофейня «Уютная»",
-            category=VenueCategory.CAFE,
-            target_audience=TargetAudience.MASS,
-            city="Москва",
-            address="ул. Тверская, д. 10, стр. 1",
-            legal_name="ИП Петров Иван Сергеевич",
-            inn="7701987654",
-            contact_person="Иван Петров",
-            contact_phone="+7 (495) 123-45-67",
-            contact_email="venue@demo-tv.ru",
-            description="Современный ТВ-экран в центре зала кофейни. Ежедневный поток: 300-500 посетителей.",
-            clients_per_day=400,
-            avg_check=Decimal("450.00"),
-            working_hours="08:00-22:00",
-            venue_id=venue.id,
-            equipment_type=EquipmentType.VENUE,  # Собственное оборудование = 70% выплата
-            revenue_share=Decimal("70.00"),  # 70% площадке
-            is_active=True,
-            is_approved=True,
-            created_at=datetime.utcnow() - timedelta(days=100)
-        )
-        db.add(tv)
-        db.flush()
-        print(f"[OK] Создано ТВ: {tv.name} (Код: {tv.code}, ID: {tv.id})")
+        # 3. Создаем 4 ТВ-точки с типом VENUE (70% выплата)
+        print("[*] Создаю 4 ТВ-точки для площадки...")
+        tv_locations = [
+            {
+                "code": "DEMO001",
+                "name": "ТВ-экран в кофейне «Уютная»",
+                "address": "ул. Тверская, д. 10, стр. 1",
+                "category": VenueCategory.CAFE,
+                "clients_per_day": 400,
+                "avg_check": Decimal("450.00")
+            },
+            {
+                "code": "DEMO002",
+                "name": "ТВ-экран в бизнес-центре «Столица»",
+                "address": "ул. Новый Арбат, д. 15",
+                "category": VenueCategory.BUSINESS_CENTER,
+                "clients_per_day": 600,
+                "avg_check": Decimal("800.00")
+            },
+            {
+                "code": "DEMO003",
+                "name": "ТВ-экран в фитнес-клубе «Актив»",
+                "address": "пр-т Мира, д. 25",
+                "category": VenueCategory.GYM,
+                "clients_per_day": 350,
+                "avg_check": Decimal("1200.00")
+            },
+            {
+                "code": "DEMO004",
+                "name": "ТВ-экран в торговом центре «Мега»",
+                "address": "Ленинградский пр-т, д. 80",
+                "category": VenueCategory.SHOPPING_CENTER,
+                "clients_per_day": 1200,
+                "avg_check": Decimal("2500.00")
+            }
+        ]
         
-        # 4. Создаем несколько рекламных кампаний с хорошими показателями
-        print("[*] Создаю рекламные кампании с хорошими показателями...")
+        tvs = []
+        for tv_data in tv_locations:
+            tv = TV(
+                code=tv_data["code"],
+                name=tv_data["name"],
+                venue_name="Кофейня «Уютная»",
+                category=tv_data["category"],
+                target_audience=TargetAudience.MASS,
+                city="Москва",
+                address=tv_data["address"],
+                legal_name="ИП Петров Иван Сергеевич",
+                inn="7701987654",
+                contact_person="Иван Петров",
+                contact_phone="+7 (495) 123-45-67",
+                contact_email="venue@demo-tv.ru",
+                description=f"Современный ТВ-экран. Ежедневный поток: {tv_data['clients_per_day']} посетителей.",
+                clients_per_day=tv_data["clients_per_day"],
+                avg_check=tv_data["avg_check"],
+                working_hours="08:00-22:00",
+                venue_id=venue.id,
+                equipment_type=EquipmentType.VENUE,  # Собственное оборудование = 70% выплата
+                revenue_share=Decimal("70.00"),  # 70% площадке
+                is_active=True,
+                is_approved=True,
+                created_at=datetime.utcnow() - timedelta(days=100)
+            )
+            db.add(tv)
+            tvs.append(tv)
+        
+        db.flush()
+        print(f"[OK] Создано {len(tvs)} ТВ-точек")
+        
+        # 4. Создаем рекламные кампании для демо-рекламодателя на всех 4 ТВ-точках
+        print("[*] Создаю рекламные кампании для демо-рекламодателя на 4 ТВ-точках...")
         
         campaigns = [
             {
                 "title": "Скидка 20% на весь ассортимент",
                 "url": "https://demo-reklama.ru/promo/sale20",
-                "description": "Специальное предложение для посетителей кофейни",
-                "image_url": "https://via.placeholder.com/800x600/4CAF50/FFFFFF?text=Sale+20%25",
-                "impressions": 12500,  # 12500 показов
-                "clicks": 487,  # 487 кликов
-                "position": 0,
-                "created_at": datetime.utcnow() - timedelta(days=60)
+                "description": "Специальное предложение",
+                "image_url": "https://via.placeholder.com/800x600/4CAF50/FFFFFF?text=Sale+20%25"
             },
             {
                 "title": "Новая коллекция весна-лето 2024",
                 "url": "https://demo-reklama.ru/collection/spring2024",
                 "description": "Свежие модели уже в продаже",
-                "image_url": "https://via.placeholder.com/800x600/2196F3/FFFFFF?text=New+Collection",
-                "impressions": 9800,
-                "clicks": 342,
-                "position": 1,
-                "created_at": datetime.utcnow() - timedelta(days=45)
+                "image_url": "https://via.placeholder.com/800x600/2196F3/FFFFFF?text=New+Collection"
             },
             {
                 "title": "Бесплатная доставка при заказе от 2000₽",
                 "url": "https://demo-reklama.ru/delivery/free",
                 "description": "Быстрая доставка по Москве",
-                "image_url": "https://via.placeholder.com/800x600/FF9800/FFFFFF?text=Free+Delivery",
-                "impressions": 11200,
-                "clicks": 521,
-                "position": 2,
-                "created_at": datetime.utcnow() - timedelta(days=30)
-            },
-            {
-                "title": "Акция: 2+1 = 3 товара по цене 2",
-                "url": "https://demo-reklama.ru/promo/buy2get1",
-                "description": "Выгодное предложение ограничено",
-                "image_url": "https://via.placeholder.com/800x600/E91E63/FFFFFF?text=2%2B1",
-                "impressions": 8500,
-                "clicks": 298,
-                "position": 3,
-                "created_at": datetime.utcnow() - timedelta(days=15)
+                "image_url": "https://via.placeholder.com/800x600/FF9800/FFFFFF?text=Free+Delivery"
             }
         ]
         
+        # Распределяем кампании по ТВ-точкам с разными показателями
+        tv_impressions_base = [12500, 15000, 9800, 18000]  # Базовые показы для каждой ТВ
+        tv_clicks_base = [487, 585, 382, 702]  # Базовые клики для каждой ТВ
+        
         links = []
-        for i, camp in enumerate(campaigns):
-            link = TVLink(
-                tv_id=tv.id,
-                advertiser_id=advertiser.id,
-                advertiser_name=advertiser.company_name,
-                title=camp["title"],
-                url=camp["url"],
-                description=camp["description"],
-                image_url=camp["image_url"],
-                impressions=camp["impressions"],
-                clicks=camp["clicks"],
-                position=camp["position"],
-                is_active=True,
-                created_at=camp["created_at"]
-            )
-            db.add(link)
-            links.append(link)
+        total_impressions = 0
+        total_clicks = 0
+        
+        for tv_idx, tv in enumerate(tvs):
+            for camp_idx, camp in enumerate(campaigns):
+                # Распределяем показы и клики по ТВ
+                impressions = tv_impressions_base[tv_idx] + (camp_idx * 500)
+                clicks = int(tv_clicks_base[tv_idx] * (1 + camp_idx * 0.1))
+                
+                link = TVLink(
+                    tv_id=tv.id,
+                    advertiser_id=advertiser.id,
+                    advertiser_name=advertiser.company_name,
+                    title=camp["title"],
+                    url=camp["url"],
+                    description=camp["description"],
+                    image_url=camp["image_url"],
+                    impressions=impressions,
+                    clicks=clicks,
+                    position=camp_idx,
+                    is_active=True,
+                    created_at=datetime.utcnow() - timedelta(days=60 - (tv_idx * 10))
+                )
+                db.add(link)
+                links.append(link)
+                total_impressions += impressions
+                total_clicks += clicks
         
         db.flush()
-        print(f"[OK] Создано {len(links)} рекламных кампаний")
+        print(f"[OK] Создано {len(links)} рекламных кампаний на {len(tvs)} ТВ-точках")
         
         # Вычисляем общие метрики
-        total_impressions = sum(c["impressions"] for c in campaigns)
-        total_clicks = sum(c["clicks"] for c in campaigns)
         avg_ctr = (total_clicks / total_impressions * 100) if total_impressions > 0 else 0
         print(f"   [*] Общая статистика:")
         print(f"      Показов: {total_impressions:,}")
         print(f"      Кликов: {total_clicks:,}")
         print(f"      CTR: {avg_ctr:.2f}%")
         
-        # 5. Создаем подписки с выплатами 70%
-        print("[*] Создаю подписки с выплатами 70%...")
+        # 5. Создаем подписки для демо-рекламодателя на всех 4 ТВ-точках
+        print("[*] Создаю подписки для демо-рекламодателя на 4 ТВ-точках...")
         
-        # Текущая активная подписка
         active_sub_start = date.today() - timedelta(days=15)
         active_sub_end = date.today() + timedelta(days=15)
-        active_sub_price = Decimal("15000.00")
-        active_sub_payout = active_sub_price * Decimal("0.70")  # 70% площадке
+        sub_price_per_tv = Decimal("15000.00")
         
-        # Прошлые подписки
-        past_subscriptions = [
-            {
-                "start": date.today() - timedelta(days=75),
-                "end": date.today() - timedelta(days=45),
-                "price": Decimal("12000.00")
-            },
-            {
-                "start": date.today() - timedelta(days=45),
-                "end": date.today() - timedelta(days=15),
-                "price": Decimal("13500.00")
-            }
-        ]
-        
-        # Создаем платеж для активной подписки
-        active_payment = Payment(
-            user_id=advertiser.id,
-            amount=active_sub_price,
-            currency="RUB",
-            payment_type="subscription",
-            description=f"Подписка на ТВ {tv.code} ({active_sub_start.strftime('%d.%m.%Y')} - {active_sub_end.strftime('%d.%m.%Y')})",
-            order_id=f"DEMO-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}",
-            status=PaymentStatus.SUCCEEDED,
-            yk_payment_id=f"yk_demo_{datetime.utcnow().timestamp()}",
-            created_at=datetime.utcnow() - timedelta(days=15),
-            paid_at=datetime.utcnow() - timedelta(days=15)
-        )
-        db.add(active_payment)
-        db.flush()
-        
-        # Активная подписка
-        active_sub = Subscription(
-            advertiser_id=advertiser.id,
-            tv_id=tv.id,
-            payment_id=active_payment.id,
-            start_date=active_sub_start,
-            end_date=active_sub_end,
-            price=active_sub_price,
-            venue_payout=active_sub_payout,
-            venue_payout_status="paid",
-            is_active=True,
-            created_at=datetime.utcnow() - timedelta(days=15)
-        )
-        db.add(active_sub)
-        
-        # Прошлые подписки
-        for i, past_sub in enumerate(past_subscriptions):
-            past_payment = Payment(
+        for tv in tvs:
+            active_payment = Payment(
                 user_id=advertiser.id,
-                amount=past_sub["price"],
+                amount=sub_price_per_tv,
                 currency="RUB",
                 payment_type="subscription",
-                description=f"Подписка на ТВ {tv.code} ({past_sub['start'].strftime('%d.%m.%Y')} - {past_sub['end'].strftime('%d.%m.%Y')})",
-                order_id=f"DEMO-PAST-{i}-{past_sub['start'].strftime('%Y%m%d')}",
+                description=f"Подписка на ТВ {tv.code} ({active_sub_start.strftime('%d.%m.%Y')} - {active_sub_end.strftime('%d.%m.%Y')})",
+                order_id=f"DEMO-{tv.code}-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}",
                 status=PaymentStatus.SUCCEEDED,
-                yk_payment_id=f"yk_demo_past_{i}_{past_sub['start'].strftime('%Y%m%d')}",
-                created_at=past_sub["start"] - timedelta(days=1),
-                paid_at=past_sub["start"] - timedelta(days=1)
+                yk_payment_id=f"yk_demo_{tv.code}_{datetime.utcnow().timestamp()}",
+                created_at=datetime.utcnow() - timedelta(days=15),
+                paid_at=datetime.utcnow() - timedelta(days=15)
             )
-            db.add(past_payment)
+            db.add(active_payment)
             db.flush()
             
-            past_subscription = Subscription(
+            active_sub = Subscription(
                 advertiser_id=advertiser.id,
                 tv_id=tv.id,
-                payment_id=past_payment.id,
-                start_date=past_sub["start"],
-                end_date=past_sub["end"],
-                price=past_sub["price"],
-                venue_payout=past_sub["price"] * Decimal("0.70"),
+                payment_id=active_payment.id,
+                start_date=active_sub_start,
+                end_date=active_sub_end,
+                price=sub_price_per_tv,
+                venue_payout=sub_price_per_tv * Decimal("0.70"),
                 venue_payout_status="paid",
-                is_active=False,
-                created_at=past_sub["start"] - timedelta(days=1)
+                is_active=True,
+                created_at=datetime.utcnow() - timedelta(days=15)
             )
-            db.add(past_subscription)
+            db.add(active_sub)
         
         db.flush()
-        print(f"[OK] Создано 3 подписки (1 активная, 2 завершенные)")
-        print(f"   [*] Активная подписка: {active_sub_price:,.0f} RUB")
-        print(f"   [*] Выплата площадке (70%): {active_sub_payout:,.0f} RUB")
+        print(f"[OK] Создано {len(tvs)} активных подписок для демо-рекламодателя")
         
-        # 6. Создаем дополнительные платежи (пополнение баланса)
+        # 6. Создаем 15 рекламодателей для площадки (по 7000 руб каждый, 70% = 4900 руб площадке)
+        print("[*] Создаю 15 рекламодателей для площадки...")
+        
+        advertiser_names = [
+            "ООО «Стиль и Мода»", "ИП Иванов Сергей", "ООО «ТехноМарт»",
+            "ИП Петрова Мария", "ООО «Красота и Здоровье»", "ИП Сидоров Алексей",
+            "ООО «Дом и Сад»", "ИП Козлова Анна", "ООО «СпортПро»",
+            "ИП Волков Дмитрий", "ООО «АвтоСервис Плюс»", "ИП Морозова Елена",
+            "ООО «Кулинария»", "ИП Лебедев Павел", "ООО «Электроника»"
+        ]
+        
+        venue_total_revenue = Decimal("0.00")
+        venue_subscriptions = []
+        
+        for i, company_name in enumerate(advertiser_names):
+            # Создаем рекламодателя
+            new_advertiser = User(
+                email=f"advertiser{i+1}@demo-tv.ru",
+                hashed_password=get_password_hash("Advertiser2024!"),
+                role=Role.ADVERTISER,
+                first_name=f"Рекламодатель{i+1}",
+                company_name=company_name,
+                inn=f"7701{1000000 + i:07d}",
+                is_active=True,
+                is_verified=True,
+                balance=Decimal("10000.00"),
+                created_at=datetime.utcnow() - timedelta(days=90 - i*5)
+            )
+            db.add(new_advertiser)
+            db.flush()
+            
+            # Создаем подписку на первую ТВ-точку (DEMO001)
+            sub_price = Decimal("7000.00")
+            venue_payout = sub_price * Decimal("0.70")  # 70% = 4900 руб
+            venue_total_revenue += venue_payout
+            
+            sub_start = date.today() - timedelta(days=10)
+            sub_end = date.today() + timedelta(days=20)
+            
+            payment = Payment(
+                user_id=new_advertiser.id,
+                amount=sub_price,
+                currency="RUB",
+                payment_type="subscription",
+                description=f"Подписка на ТВ {tvs[0].code} ({sub_start.strftime('%d.%m.%Y')} - {sub_end.strftime('%d.%m.%Y')})",
+                order_id=f"VENUE-ADV{i+1}-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}",
+                status=PaymentStatus.SUCCEEDED,
+                yk_payment_id=f"yk_venue_adv{i+1}_{datetime.utcnow().timestamp()}",
+                created_at=datetime.utcnow() - timedelta(days=10),
+                paid_at=datetime.utcnow() - timedelta(days=10)
+            )
+            db.add(payment)
+            db.flush()
+            
+            subscription = Subscription(
+                advertiser_id=new_advertiser.id,
+                tv_id=tvs[0].id,
+                payment_id=payment.id,
+                start_date=sub_start,
+                end_date=sub_end,
+                price=sub_price,
+                venue_payout=venue_payout,
+                venue_payout_status="paid",
+                is_active=True,
+                created_at=datetime.utcnow() - timedelta(days=10)
+            )
+            db.add(subscription)
+            venue_subscriptions.append(subscription)
+        
+        db.flush()
+        print(f"[OK] Создано 15 рекламодателей для площадки")
+        print(f"   [*] Каждый платит: 7,000 RUB")
+        print(f"   [*] Выплата площадке (70%): 4,900 RUB с каждого")
+        print(f"   [*] Общий доход площадки: {venue_total_revenue:,.0f} RUB")
+        
+        # 7. Создаем дополнительные платежи (пополнение баланса)
         print("[*] Создаю историю платежей...")
         balance_payments = [
             {"amount": Decimal("30000.00"), "days_ago": 80},
@@ -313,14 +368,20 @@ def create_demo_account():
         print(f"ПАРОЛЬ: {demo_password}")
         print(f"\nСТАТИСТИКА:")
         print(f"   - Рекламодатель: {advertiser.company_name}")
-        print(f"   - ТВ-площадка: {tv.venue_name} ({tv.code})")
+        print(f"   - ТВ-площадка: {venue.company_name}")
+        print(f"   - ТВ-точек: {len(tvs)}")
         print(f"   - Рекламных кампаний: {len(links)}")
         print(f"   - Всего показов: {total_impressions:,}")
         print(f"   - Всего кликов: {total_clicks:,}")
         print(f"   - Средний CTR: {avg_ctr:.2f}%")
-        print(f"   - Активных подписок: 1")
+        print(f"   - Активных подписок демо-рекламодателя: {len(tvs)}")
         print(f"   - Выплата площадке: 70%")
         print(f"   - Баланс рекламодателя: {advertiser.balance:,.0f} RUB")
+        print(f"\nСТАТИСТИКА ПЛОЩАДКИ:")
+        print(f"   - Рекламодателей на площадке: 15")
+        print(f"   - Платеж с каждого: 7,000 RUB")
+        print(f"   - Выплата площадке (70%): 4,900 RUB с каждого")
+        print(f"   - Общий доход площадки: {venue_total_revenue:,.0f} RUB")
         print(f"\nВойдите в систему и проверьте дашборд рекламодателя!")
         print("="*60)
         
