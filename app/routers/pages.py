@@ -798,41 +798,95 @@ async def advertiser_create_payment_page(request: Request, user: User = Depends(
 
 @router.get("/advertiser/stats", response_class=HTMLResponse)
 async def advertiser_stats(request: Request, period: str = None, date_from: str = None, date_to: str = None, tv_id: Optional[str] = Query(default=None), user: User = Depends(require_role_for_page(Role.ADVERTISER)), db: Session = Depends(get_db)):
-    """Advertiser stats with filters."""
+    """Advertiser stats with filters - использует данные из subscriptions как в аналитике."""
     from datetime import timedelta
     
-    # Load campaigns with TV relationship (для фильтра)
-    campaigns = db.query(TVLink).options(joinedload(TVLink.tv)).filter(TVLink.advertiser_id == user.id).all()
-    all_campaigns = list(campaigns)  # for filter dropdown
+    today = date.today()
     
-    # Filter by TV if specified - handle empty string and convert to int
+    # Определяем период фильтрации
+    filter_start = None
+    filter_end = None
+    
+    if period == "today":
+        filter_start = today
+        filter_end = today
+    elif period == "week":
+        filter_start = today - timedelta(days=7)
+        filter_end = today
+    elif period == "month":
+        filter_start = today - timedelta(days=30)
+        filter_end = today
+    
+    if date_from:
+        try:
+            filter_start = datetime.strptime(date_from, "%Y-%m-%d").date()
+        except:
+            pass
+    if date_to:
+        try:
+            filter_end = datetime.strptime(date_to, "%Y-%m-%d").date()
+        except:
+            pass
+    
+    # Если период не задан, используем "всё время" (без фильтра по датам)
+    if not filter_start and not filter_end:
+        filter_start = None
+        filter_end = None
+    
+    # Load all subscriptions для фильтра dropdown
+    all_subscriptions = db.query(Subscription).options(joinedload(Subscription.tv)).filter(Subscription.advertiser_id == user.id).all()
+    unique_tvs = {}
+    for s in all_subscriptions:
+        if s.tv_id and s.tv_id not in unique_tvs:
+            unique_tvs[s.tv_id] = s.tv
+    
+    # Filter by TV if specified
     selected_tv_id = None
     tv_id_filter = None
     if tv_id and tv_id.strip():
         try:
             tv_id_int = int(tv_id)
-            campaigns = [c for c in campaigns if c.tv_id == tv_id_int]
             selected_tv_id = tv_id_int
             tv_id_filter = tv_id_int
         except (ValueError, TypeError):
-            pass  # Invalid tv_id, ignore filter
+            pass
     
-    # Рассчитываем статистику из subscriptions (как в аналитике), а не из TVLink
+    # Загружаем subscriptions с фильтрами
     subscriptions_query = db.query(Subscription).options(joinedload(Subscription.tv)).filter(Subscription.advertiser_id == user.id)
     if tv_id_filter:
         subscriptions_query = subscriptions_query.filter(Subscription.tv_id == tv_id_filter)
     subscriptions = subscriptions_query.all()
     
-    today = date.today()
+    # Фильтруем по датам если заданы
+    if filter_start or filter_end:
+        filtered_subscriptions = []
+        for s in subscriptions:
+            # Подписка попадает в период, если пересекается с фильтром
+            if filter_start and s.end_date < filter_start:
+                continue
+            if filter_end and s.start_date > filter_end:
+                continue
+            filtered_subscriptions.append(s)
+        subscriptions = filtered_subscriptions
+    
+    # Рассчитываем статистику из subscriptions (как в аналитике)
     total_impressions = 0
     total_clicks = 0
-    active_count = 0
+    active_tv_ids = set()
+    
+    # Группируем по ТВ для отображения в таблице
+    tv_stats_dict = {}  # tv_id -> {tv, impressions, clicks, is_active, link}
     
     for s in subscriptions:
-        if s.start_date <= today <= s.end_date:
-            active_count += 1
+        if not s.tv:
+            continue
         
-        # Расчёт показов как в аналитике
+        tv_id = s.tv_id
+        is_active = s.start_date <= today <= s.end_date
+        if is_active:
+            active_tv_ids.add(tv_id)
+        
+        # Расчёт показов для этой подписки
         overlapping = db.query(Subscription).filter(
             Subscription.tv_id == s.tv_id,
             Subscription.start_date <= s.end_date,
@@ -840,9 +894,18 @@ async def advertiser_stats(request: Request, period: str = None, date_from: str 
         ).count()
         num_advertisers = max(1, overlapping)
         days_in_period = (s.end_date - s.start_date).days + 1
+        
+        # Если есть фильтр по датам, считаем только дни в периоде фильтра
+        if filter_start or filter_end:
+            period_start = max(s.start_date, filter_start) if filter_start else s.start_date
+            period_end = min(s.end_date, filter_end) if filter_end else s.end_date
+            if period_start <= period_end:
+                days_in_period = (period_end - period_start).days + 1
+            else:
+                days_in_period = 0
+        
         showings_per_day = SLOTS_PER_DAY // num_advertisers
         showings = showings_per_day * days_in_period
-        total_impressions += showings
         
         # Клики из TVLink или случайные 5-10
         link = db.query(TVLink).filter(TVLink.tv_id == s.tv_id, TVLink.advertiser_id == user.id).first()
@@ -853,9 +916,27 @@ async def advertiser_stats(request: Request, period: str = None, date_from: str 
             clicks = random.randint(5, 10)
         else:
             clicks = clicks_from_db
-        total_clicks += clicks
+        
+        # Суммируем по ТВ
+        if tv_id not in tv_stats_dict:
+            tv_stats_dict[tv_id] = {
+                'tv': s.tv,
+                'impressions': 0,
+                'clicks': clicks,  # берём клики один раз
+                'is_active': is_active,
+                'link': link
+            }
+        tv_stats_dict[tv_id]['impressions'] += showings
+        if is_active:
+            tv_stats_dict[tv_id]['is_active'] = True
     
-    conversion = f"{(total_clicks / total_impressions * 100):.2f}" if total_impressions > 0 else "0"
+    # Суммируем итоговую статистику
+    for tv_data in tv_stats_dict.values():
+        total_impressions += tv_data['impressions']
+        total_clicks += tv_data['clicks']
+    
+    active_count = len(active_tv_ids)
+    conversion = f"{(total_clicks / total_impressions * 100):.2f}" if total_impressions > 0 else "0.00"
     
     stats = {
         "impressions": total_impressions,
@@ -864,16 +945,33 @@ async def advertiser_stats(request: Request, period: str = None, date_from: str 
         "conversion": conversion
     }
     
-    # Daily stats placeholder (will be populated from API later)
-    daily_stats = []
+    # Создаём объекты для таблицы (как TVLink для совместимости с шаблоном)
+    class CampaignRow:
+        def __init__(self, tv, impressions, clicks, is_active, link=None):
+            self.tv = tv
+            self.impressions = impressions
+            self.clicks = clicks
+            self.is_active = is_active
+            self.title = link.title if link and link.title else tv.name
+            self.url = link.url if link and link.url else ""
     
-    today = date.today()
+    campaigns = [CampaignRow(**data) for data in tv_stats_dict.values()]
+    
+    # Для фильтра dropdown используем все уникальные ТВ
+    class TVOption:
+        def __init__(self, tv_id, tv):
+            self.tv_id = tv_id
+            self.tv = tv
+    
+    all_campaigns = [TVOption(tv_id, tv) for tv_id, tv in unique_tvs.items()]
+    
+    # Значения по умолчанию для дат
     date_from_val = date_from or (today - timedelta(days=30)).strftime("%Y-%m-%d")
     date_to_val = date_to or today.strftime("%Y-%m-%d")
     
     return templates.TemplateResponse("advertiser_stats.html", {
         "request": request, "user": user, "campaigns": campaigns, "all_campaigns": all_campaigns,
-        "stats": stats, "daily_stats": daily_stats, "period": period,
+        "stats": stats, "period": period,
         "date_from": date_from_val, "date_to": date_to_val, "selected_tv_id": selected_tv_id,
         **get_role_context(request, user)
     })
