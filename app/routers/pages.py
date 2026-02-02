@@ -61,10 +61,31 @@ async def advertiser_request(
     db: Session = Depends(get_db),
 ):
     """Обработка формы заявки рекламодателя с лендинга."""
+    # #region agent log
+    import json, os
+    print(f"[DEBUG-REQUEST] advertiser_request ENTRY: name={name}, email={email}, phone={phone[:10]}")
+    try:
+        _base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        DEBUG_LOG_PATH = os.path.join(_base_dir, ".cursor", "debug.log")
+        DEBUG_LOG_DIR = os.path.dirname(DEBUG_LOG_PATH)
+        if not os.path.exists(DEBUG_LOG_DIR):
+            os.makedirs(DEBUG_LOG_DIR, exist_ok=True)
+        log_entry = {"sessionId": "debug-session", "runId": "run1", "hypothesisId": "F", "location": "pages.py:60", "message": "advertiser_request entry", "data": {"name": name, "email": email, "phone": phone[:10]}, "timestamp": int(datetime.now().timestamp() * 1000)}
+        with open(DEBUG_LOG_PATH, "a", encoding="utf-8") as f:
+            f.write(json.dumps(log_entry) + "\n")
+    except Exception as log_err:
+        print(f"[DEBUG-REQUEST] Log write error: {log_err}")
+    # #endregion
     try:
         # Отправляем уведомления
         from app.services.notification_service import NotificationService
         
+        # #region agent log
+        try:
+            with open(DEBUG_LOG_PATH, "a", encoding="utf-8") as f:
+                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "F", "location": "pages.py:68", "message": "before notify_advertiser_request", "data": {}, "timestamp": int(datetime.now().timestamp() * 1000)}) + "\n")
+        except: pass
+        # #endregion
         await NotificationService.notify_advertiser_request(
             name=name,
             email=email,
@@ -72,6 +93,12 @@ async def advertiser_request(
             company=company,
             description=description
         )
+        # #region agent log
+        try:
+            with open(DEBUG_LOG_PATH, "a", encoding="utf-8") as f:
+                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "F", "location": "pages.py:77", "message": "after notify_advertiser_request", "data": {}, "timestamp": int(datetime.now().timestamp() * 1000)}) + "\n")
+        except: pass
+        # #endregion
         
         print(f"Новая заявка от рекламодателя: {name} ({email}), телефон: {phone}, компания: {company}")
         
@@ -83,6 +110,12 @@ async def advertiser_request(
             }
         )
     except Exception as e:
+        # #region agent log
+        try:
+            with open(DEBUG_LOG_PATH, "a", encoding="utf-8") as f:
+                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "E", "location": "pages.py:86", "message": "advertiser_request exception", "data": {"error_type": type(e).__name__, "error_msg": str(e)[:200]}, "timestamp": int(datetime.now().timestamp() * 1000)}) + "\n")
+        except: pass
+        # #endregion
         print(f"Ошибка при обработке заявки: {e}")
         import traceback
         traceback.print_exc()
@@ -106,10 +139,31 @@ async def venue_request(
     db: Session = Depends(get_db),
 ):
     """Обработка формы заявки площадки с лендинга (кнопка "ХОЧУ ПОЛУЧАТЬ!")."""
+    # #region agent log
+    import json, os
+    print(f"[DEBUG-REQUEST] venue_request ENTRY: name={name}, email={email}, phone={phone[:10]}")
+    try:
+        _base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        DEBUG_LOG_PATH = os.path.join(_base_dir, ".cursor", "debug.log")
+        DEBUG_LOG_DIR = os.path.dirname(DEBUG_LOG_PATH)
+        if not os.path.exists(DEBUG_LOG_DIR):
+            os.makedirs(DEBUG_LOG_DIR, exist_ok=True)
+        log_entry = {"sessionId": "debug-session", "runId": "run1", "hypothesisId": "F", "location": "pages.py:98", "message": "venue_request entry", "data": {"name": name, "email": email, "phone": phone[:10]}, "timestamp": int(datetime.now().timestamp() * 1000)}
+        with open(DEBUG_LOG_PATH, "a", encoding="utf-8") as f:
+            f.write(json.dumps(log_entry) + "\n")
+    except Exception as log_err:
+        print(f"[DEBUG-REQUEST] Log write error: {log_err}")
+    # #endregion
     try:
         # Отправляем уведомления
         from app.services.notification_service import NotificationService
         
+        # #region agent log
+        try:
+            with open(DEBUG_LOG_PATH, "a", encoding="utf-8") as f:
+                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "F", "location": "pages.py:111", "message": "before notify_venue_request", "data": {}, "timestamp": int(datetime.now().timestamp() * 1000)}) + "\n")
+        except: pass
+        # #endregion
         await NotificationService.notify_venue_request(
             name=name,
             email=email,
@@ -117,6 +171,12 @@ async def venue_request(
             venue_name=venue_name,
             description=description
         )
+        # #region agent log
+        try:
+            with open(DEBUG_LOG_PATH, "a", encoding="utf-8") as f:
+                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "F", "location": "pages.py:120", "message": "after notify_venue_request", "data": {}, "timestamp": int(datetime.now().timestamp() * 1000)}) + "\n")
+        except: pass
+        # #endregion
         
         print(f"Новая заявка от площадки: {name} ({email}), телефон: {phone}, заведение: {venue_name}")
         
@@ -128,6 +188,12 @@ async def venue_request(
             }
         )
     except Exception as e:
+        # #region agent log
+        try:
+            with open(DEBUG_LOG_PATH, "a", encoding="utf-8") as f:
+                f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "E", "location": "pages.py:131", "message": "venue_request exception", "data": {"error_type": type(e).__name__, "error_msg": str(e)[:200]}, "timestamp": int(datetime.now().timestamp() * 1000)}) + "\n")
+        except: pass
+        # #endregion
         print(f"Ошибка при обработке заявки площадки: {e}")
         import traceback
         traceback.print_exc()
@@ -411,6 +477,21 @@ async def advertiser_campaign_request(
     user: User = Depends(require_role_for_page(Role.ADVERTISER)),
 ):
     """Отправка заявки на рекламную кампанию на NOTIFY_EMAIL."""
+    # #region agent log
+    import json, os
+    print(f"[DEBUG-REQUEST] campaign_request ENTRY: user_email={user.email}, business_type={business_type}")
+    try:
+        _base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        DEBUG_LOG_PATH = os.path.join(_base_dir, ".cursor", "debug.log")
+        DEBUG_LOG_DIR = os.path.dirname(DEBUG_LOG_PATH)
+        if not os.path.exists(DEBUG_LOG_DIR):
+            os.makedirs(DEBUG_LOG_DIR, exist_ok=True)
+        log_entry = {"sessionId": "debug-session", "runId": "run1", "hypothesisId": "F", "location": "pages.py:404", "message": "campaign_request entry", "data": {"user_email": user.email, "business_type": business_type}, "timestamp": int(datetime.now().timestamp() * 1000)}
+        with open(DEBUG_LOG_PATH, "a", encoding="utf-8") as f:
+            f.write(json.dumps(log_entry) + "\n")
+    except Exception as log_err:
+        print(f"[DEBUG-REQUEST] Log write error: {log_err}")
+    # #endregion
     from app.services.notification_service import NotificationService
 
     notify_email = getattr(settings, "NOTIFY_EMAIL", "av.vysokikh@gmail.com")
@@ -424,7 +505,32 @@ async def advertiser_campaign_request(
     <p><strong>Адрес бизнеса:</strong> {business_address}</p>
     <p><strong>Сайт:</strong> {website or '—'}</p>
     """
-    await NotificationService.send_email(notify_email, subject, body_html)
+    # #region agent log
+    print(f"[DEBUG-REQUEST] campaign_request: calling send_email to {notify_email}, subject={subject[:50]}")
+    try:
+        _base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        DEBUG_LOG_PATH = os.path.join(_base_dir, ".cursor", "debug.log")
+        DEBUG_LOG_DIR = os.path.dirname(DEBUG_LOG_PATH)
+        if not os.path.exists(DEBUG_LOG_DIR):
+            os.makedirs(DEBUG_LOG_DIR, exist_ok=True)
+        log_entry = {"sessionId": "debug-session", "runId": "run1", "hypothesisId": "F", "location": "pages.py:427", "message": "before send_email campaign", "data": {"notify_email": notify_email, "subject": subject[:50]}, "timestamp": int(datetime.now().timestamp() * 1000)}
+        with open(DEBUG_LOG_PATH, "a", encoding="utf-8") as f:
+            f.write(json.dumps(log_entry) + "\n")
+    except Exception as log_err:
+        print(f"[DEBUG-REQUEST] Log write error: {log_err}")
+    # #endregion
+    result = await NotificationService.send_email(notify_email, subject, body_html)
+    # #region agent log
+    print(f"[DEBUG-REQUEST] campaign_request: send_email result={result}")
+    try:
+        _base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        DEBUG_LOG_PATH = os.path.join(_base_dir, ".cursor", "debug.log")
+        log_entry = {"sessionId": "debug-session", "runId": "run1", "hypothesisId": "F", "location": "pages.py:429", "message": "after send_email campaign", "data": {"result": result}, "timestamp": int(datetime.now().timestamp() * 1000)}
+        with open(DEBUG_LOG_PATH, "a", encoding="utf-8") as f:
+            f.write(json.dumps(log_entry) + "\n")
+    except Exception as log_err:
+        print(f"[DEBUG-REQUEST] Log write error: {log_err}")
+    # #endregion
     return RedirectResponse(url="/advertiser?success=campaign_request", status_code=303)
 
 

@@ -4,12 +4,26 @@
 
 import smtplib
 import httpx
+import json
+import os
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from typing import Optional
 from datetime import datetime
 
 from app.settings import settings
+
+# #region agent log
+try:
+    _base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    DEBUG_LOG_PATH = os.path.join(_base_dir, ".cursor", "debug.log")
+    DEBUG_LOG_DIR = os.path.dirname(DEBUG_LOG_PATH)
+    if not os.path.exists(DEBUG_LOG_DIR):
+        os.makedirs(DEBUG_LOG_DIR, exist_ok=True)
+except:
+    DEBUG_LOG_PATH = None
+    DEBUG_LOG_DIR = None
+# #endregion
 
 
 class NotificationService:
@@ -34,17 +48,53 @@ class NotificationService:
         Returns:
             True если отправлено успешно, False иначе
         """
+        # #region agent log
+        print(f"[DEBUG-EMAIL] send_email ENTRY: to={to_email}, subject={subject[:50]}")
+        try:
+            if DEBUG_LOG_PATH:
+                log_entry = {"sessionId": "debug-session", "runId": "run1", "hypothesisId": "A", "location": "notification_service.py:25", "message": "send_email entry", "data": {"to_email": to_email, "subject": subject[:50]}, "timestamp": int(datetime.now().timestamp() * 1000)}
+                with open(DEBUG_LOG_PATH, "a", encoding="utf-8") as f:
+                    f.write(json.dumps(log_entry) + "\n")
+        except Exception as log_err:
+            print(f"[DEBUG-EMAIL] Log write error: {log_err}")
+        # #endregion
         import os
         smtp_host = (settings.SMTP_HOST or os.getenv("SMTP_SERVER") or "").strip()
         smtp_user = (settings.SMTP_USER or os.getenv("SMTP_USER") or "").strip()
         smtp_password = (settings.SMTP_PASSWORD or os.getenv("SMTP_PASSWORD") or "").strip()
         smtp_port = getattr(settings, "SMTP_PORT", 587) or int(os.getenv("SMTP_PORT", "587"))
 
+        # #region agent log
+        print(f"[DEBUG-EMAIL] SMTP config check: host={smtp_host[:20] if smtp_host else 'EMPTY'}, user={smtp_user[:10] if smtp_user else 'EMPTY'}, port={smtp_port}, has_password={bool(smtp_password)}")
+        try:
+            if DEBUG_LOG_PATH:
+                log_entry = {"sessionId": "debug-session", "runId": "run1", "hypothesisId": "A", "location": "notification_service.py:55", "message": "SMTP config check", "data": {"smtp_host": smtp_host[:20] if smtp_host else "", "smtp_user": smtp_user[:10] if smtp_user else "", "smtp_port": smtp_port, "has_password": bool(smtp_password)}, "timestamp": int(datetime.now().timestamp() * 1000)}
+                with open(DEBUG_LOG_PATH, "a", encoding="utf-8") as f:
+                    f.write(json.dumps(log_entry) + "\n")
+        except Exception as log_err:
+            print(f"[DEBUG-EMAIL] Log write error: {log_err}")
+        # #endregion
+
         if not smtp_host or not smtp_user:
+            # #region agent log
+            print(f"[DEBUG-EMAIL] SMTP NOT CONFIGURED: host={smtp_host or 'EMPTY'}, user={smtp_user or 'EMPTY'}")
+            try:
+                if DEBUG_LOG_PATH:
+                    with open(DEBUG_LOG_PATH, "a", encoding="utf-8") as f:
+                        f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "A", "location": "notification_service.py:78", "message": "SMTP not configured", "data": {"to_email": to_email, "smtp_host_empty": not smtp_host, "smtp_user_empty": not smtp_user}, "timestamp": int(datetime.now().timestamp() * 1000)}) + "\n")
+            except Exception as log_err:
+                print(f"[DEBUG-EMAIL] Log write error: {log_err}")
+            # #endregion
             print("[NOTIFY] SMTP не настроен: укажите SMTP_HOST (или SMTP_SERVER) и SMTP_USER в .env. Заявка не отправлена на", to_email)
             return False
 
         try:
+            # #region agent log
+            try:
+                with open(DEBUG_LOG_PATH, "a", encoding="utf-8") as f:
+                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "B", "location": "notification_service.py:50", "message": "before SMTP connect", "data": {"smtp_host": smtp_host, "smtp_port": smtp_port}, "timestamp": int(datetime.now().timestamp() * 1000)}) + "\n")
+            except: pass
+            # #endregion
             msg = MIMEMultipart('alternative')
             msg['Subject'] = subject
             msg['From'] = (settings.SMTP_FROM_EMAIL or smtp_user).strip()
@@ -55,19 +105,55 @@ class NotificationService:
             msg.attach(MIMEText(body_html, 'html', 'utf-8'))
 
             if smtp_port == 465:
+                # #region agent log
+                try:
+                    with open(DEBUG_LOG_PATH, "a", encoding="utf-8") as f:
+                        f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "B", "location": "notification_service.py:62", "message": "SMTP_SSL connect attempt", "data": {"host": smtp_host, "port": smtp_port}, "timestamp": int(datetime.now().timestamp() * 1000)}) + "\n")
+                except: pass
+                # #endregion
                 server = smtplib.SMTP_SSL(smtp_host, smtp_port)
             else:
+                # #region agent log
+                try:
+                    with open(DEBUG_LOG_PATH, "a", encoding="utf-8") as f:
+                        f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "B", "location": "notification_service.py:66", "message": "SMTP connect attempt", "data": {"host": smtp_host, "port": smtp_port, "use_tls": settings.SMTP_USE_TLS}, "timestamp": int(datetime.now().timestamp() * 1000)}) + "\n")
+                except: pass
+                # #endregion
                 server = smtplib.SMTP(smtp_host, smtp_port)
                 if settings.SMTP_USE_TLS:
                     server.starttls()
+            # #region agent log
+            try:
+                with open(DEBUG_LOG_PATH, "a", encoding="utf-8") as f:
+                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "C", "location": "notification_service.py:70", "message": "before SMTP login", "data": {"has_user": bool(smtp_user), "has_password": bool(smtp_password)}, "timestamp": int(datetime.now().timestamp() * 1000)}) + "\n")
+            except: pass
+            # #endregion
             if smtp_user and smtp_password:
                 server.login(smtp_user, smtp_password)
+            # #region agent log
+            try:
+                with open(DEBUG_LOG_PATH, "a", encoding="utf-8") as f:
+                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "D", "location": "notification_service.py:73", "message": "before send_message", "data": {"to_email": to_email}, "timestamp": int(datetime.now().timestamp() * 1000)}) + "\n")
+            except: pass
+            # #endregion
             server.send_message(msg)
             server.quit()
+            # #region agent log
+            try:
+                with open(DEBUG_LOG_PATH, "a", encoding="utf-8") as f:
+                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "D", "location": "notification_service.py:76", "message": "email sent successfully", "data": {"to_email": to_email, "subject": subject[:50]}, "timestamp": int(datetime.now().timestamp() * 1000)}) + "\n")
+            except: pass
+            # #endregion
 
             print(f"[NOTIFY] Письмо отправлено на {to_email}: {subject[:50]}...")
             return True
         except Exception as e:
+            # #region agent log
+            try:
+                with open(DEBUG_LOG_PATH, "a", encoding="utf-8") as f:
+                    f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "E", "location": "notification_service.py:82", "message": "SMTP error", "data": {"to_email": to_email, "error_type": type(e).__name__, "error_msg": str(e)[:200]}, "timestamp": int(datetime.now().timestamp() * 1000)}) + "\n")
+            except: pass
+            # #endregion
             print(f"[NOTIFY] Ошибка отправки на {to_email}: {e}")
             import traceback
             traceback.print_exc()
@@ -206,7 +292,13 @@ class NotificationService:
         """
         
         notify_email = getattr(settings, "NOTIFY_EMAIL", None) or settings.ADMIN_EMAIL or "av.vysokikh@gmail.com"
-        await NotificationService.send_email(notify_email, email_subject, email_body)
+        # #region agent log
+        print(f"[DEBUG-NOTIFY] notify_advertiser_request: calling send_email to {notify_email}")
+        # #endregion
+        result = await NotificationService.send_email(notify_email, email_subject, email_body)
+        # #region agent log
+        print(f"[DEBUG-NOTIFY] notify_advertiser_request: send_email result={result}")
+        # #endregion
         
         # Telegram уведомление
         telegram_message = f"""
@@ -258,7 +350,13 @@ class NotificationService:
         """
         
         admin_email = settings.ADMIN_EMAIL or "admin@xk-media.ru"
-        await NotificationService.send_email(admin_email, email_subject, email_body)
+        # #region agent log
+        print(f"[DEBUG-NOTIFY] notify_venue_request: calling send_email to {admin_email}")
+        # #endregion
+        result = await NotificationService.send_email(admin_email, email_subject, email_body)
+        # #region agent log
+        print(f"[DEBUG-NOTIFY] notify_venue_request: send_email result={result}")
+        # #endregion
         
         # Telegram уведомление
         telegram_message = f"""
