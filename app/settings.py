@@ -86,6 +86,8 @@ class Settings(BaseSettings):
     SMTP_PASSWORD: str = ""
     SMTP_FROM_EMAIL: str = ""
     SMTP_USE_TLS: bool = True
+    # Куда приходят заявки с лендинга и из ЛК (создать рекламную кампанию)
+    NOTIFY_EMAIL: str = "av.vysokikh@gmail.com"
     
     # ─────────────────────────────────────────────────────────────
     # Telegram для уведомлений

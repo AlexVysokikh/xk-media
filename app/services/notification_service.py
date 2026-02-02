@@ -34,31 +34,41 @@ class NotificationService:
         Returns:
             True если отправлено успешно, False иначе
         """
-        if not settings.SMTP_HOST or not settings.SMTP_USER:
-            print("SMTP not configured, skipping email notification")
+        import os
+        smtp_host = (settings.SMTP_HOST or os.getenv("SMTP_SERVER") or "").strip()
+        smtp_user = (settings.SMTP_USER or os.getenv("SMTP_USER") or "").strip()
+        smtp_password = (settings.SMTP_PASSWORD or os.getenv("SMTP_PASSWORD") or "").strip()
+        smtp_port = getattr(settings, "SMTP_PORT", 587) or int(os.getenv("SMTP_PORT", "587"))
+
+        if not smtp_host or not smtp_user:
+            print("[NOTIFY] SMTP не настроен: укажите SMTP_HOST (или SMTP_SERVER) и SMTP_USER в .env. Заявка не отправлена на", to_email)
             return False
-        
+
         try:
             msg = MIMEMultipart('alternative')
             msg['Subject'] = subject
-            msg['From'] = settings.SMTP_FROM_EMAIL or settings.SMTP_USER
+            msg['From'] = (settings.SMTP_FROM_EMAIL or smtp_user).strip()
             msg['To'] = to_email
-            
+
             if body_text:
                 msg.attach(MIMEText(body_text, 'plain', 'utf-8'))
             msg.attach(MIMEText(body_html, 'html', 'utf-8'))
-            
-            with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT) as server:
+
+            if smtp_port == 465:
+                server = smtplib.SMTP_SSL(smtp_host, smtp_port)
+            else:
+                server = smtplib.SMTP(smtp_host, smtp_port)
                 if settings.SMTP_USE_TLS:
                     server.starttls()
-                if settings.SMTP_USER and settings.SMTP_PASSWORD:
-                    server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
-                server.send_message(msg)
-            
-            print(f"Email sent to {to_email}: {subject}")
+            if smtp_user and smtp_password:
+                server.login(smtp_user, smtp_password)
+            server.send_message(msg)
+            server.quit()
+
+            print(f"[NOTIFY] Письмо отправлено на {to_email}: {subject[:50]}...")
             return True
         except Exception as e:
-            print(f"Error sending email to {to_email}: {e}")
+            print(f"[NOTIFY] Ошибка отправки на {to_email}: {e}")
             import traceback
             traceback.print_exc()
             return False
@@ -195,8 +205,8 @@ class NotificationService:
         </html>
         """
         
-        admin_email = settings.ADMIN_EMAIL or "admin@xk-media.ru"
-        await NotificationService.send_email(admin_email, email_subject, email_body)
+        notify_email = getattr(settings, "NOTIFY_EMAIL", None) or settings.ADMIN_EMAIL or "av.vysokikh@gmail.com"
+        await NotificationService.send_email(notify_email, email_subject, email_body)
         
         # Telegram уведомление
         telegram_message = f"""

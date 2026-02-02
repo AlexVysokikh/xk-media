@@ -421,9 +421,6 @@ async def advertiser_dashboard(request: Request, user: User = Depends(require_ro
     })
 
 
-CAMPAIGN_REQUEST_EMAIL = "av.vysokikh@gmail.com"
-
-
 @router.post("/advertiser/campaign-request", response_class=HTMLResponse)
 async def advertiser_campaign_request(
     request: Request,
@@ -433,9 +430,10 @@ async def advertiser_campaign_request(
     website: str = Form(""),
     user: User = Depends(require_role_for_page(Role.ADVERTISER)),
 ):
-    """Отправка заявки на рекламную кампанию на почту av.vysokikh@gmail.com."""
+    """Отправка заявки на рекламную кампанию на NOTIFY_EMAIL."""
     from app.services.notification_service import NotificationService
 
+    notify_email = getattr(settings, "NOTIFY_EMAIL", "av.vysokikh@gmail.com")
     user_name = (user.company_name or f"{user.first_name or ''} {user.last_name or ''}".strip() or user.email)
     subject = f"Заявка на рекламную кампанию: {user_name}"
     body_html = f"""
@@ -446,7 +444,7 @@ async def advertiser_campaign_request(
     <p><strong>Адрес бизнеса:</strong> {business_address}</p>
     <p><strong>Сайт:</strong> {website or '—'}</p>
     """
-    await NotificationService.send_email(CAMPAIGN_REQUEST_EMAIL, subject, body_html)
+    await NotificationService.send_email(notify_email, subject, body_html)
     return RedirectResponse(url="/advertiser?success=campaign_request", status_code=303)
 
 
