@@ -1,90 +1,47 @@
 {% extends "base.html" %}
 
-{% block title %}Подписки — XK Media{% endblock %}
+{% block title %}Статистика размещений — XK Media{% endblock %}
 
 {% block head %}
 <style>
-    .tariff-card {
-        background: linear-gradient(135deg, #1a1a2e, #16213e);
-        border: 2px solid var(--accent);
-        border-radius: 12px;
-        padding: 1.5rem;
-        text-align: center;
-        margin-bottom: 1.5rem;
-    }
-    .tariff-name {
-        font-size: 1.5rem;
-        font-weight: 700;
-        margin-bottom: 0.5rem;
-    }
-    .tariff-price {
-        font-size: 2.5rem;
-        font-weight: 700;
-        color: var(--accent);
-    }
-    .tariff-price span {
-        font-size: 1rem;
-        color: var(--text-muted);
-    }
-    .subscription-card {
-        background: var(--secondary);
-        border-radius: 10px;
-        padding: 1rem 1.25rem;
-        margin-bottom: 0.75rem;
-        display: grid;
-        grid-template-columns: 2fr 1fr 1fr auto;
-        gap: 1rem;
-        align-items: center;
-        border-left: 4px solid var(--success);
-    }
-    .subscription-card.expired {
-        border-left-color: var(--text-muted);
-        opacity: 0.7;
-    }
-    .sub-tv .name {
-        font-weight: 600;
-        margin-bottom: 0.25rem;
-    }
-    .sub-tv .venue {
-        font-size: 0.8rem;
-        color: var(--text-muted);
-    }
-    .sub-dates {
-        font-size: 0.85rem;
-    }
-    .sub-dates .days-left {
-        font-weight: 600;
-        color: var(--success);
-    }
-    .sub-price {
-        text-align: right;
-    }
-    .sub-price .amount {
-        font-weight: 700;
-        font-size: 1.1rem;
-        color: var(--accent);
-    }
-    .tv-select-card {
-        background: var(--secondary);
-        border: 1px solid var(--border);
-        border-radius: 10px;
-        padding: 1rem;
-        margin-bottom: 0.5rem;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-    .tv-select-card:hover {
-        border-color: var(--accent);
+    .stats-table {
+        width: 100%;
+        border-collapse: collapse;
         background: var(--card-bg);
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid var(--border);
     }
-    .tv-select-card.selected {
-        border-color: var(--accent);
-        background: rgba(233, 69, 96, 0.1);
+    .stats-table th,
+    .stats-table td {
+        padding: 1rem 1.25rem;
+        text-align: left;
+        border-bottom: 1px solid var(--border);
     }
-    @media (max-width: 768px) {
-        .subscription-card {
-            grid-template-columns: 1fr;
-            text-align: center;
+    .stats-table th {
+        background: #f3f4f6;
+        font-weight: 700;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-muted);
+    }
+    .stats-table tr:last-child td { border-bottom: none; }
+    .stats-table tr:hover td { background: rgba(37, 99, 235, 0.03); }
+    .campaign-name { font-weight: 600; color: var(--text); }
+    .tv-venue { font-size: 0.85rem; color: var(--text-muted); }
+    .stat-num { font-weight: 700; color: var(--accent); font-family: 'JetBrains Mono', monospace; }
+    .stat-ots { font-weight: 600; color: var(--success); }
+    .stat-clicks { font-weight: 600; color: var(--accent-tertiary); }
+    @media (max-width: 900px) {
+        .stats-table { display: block; }
+        .stats-table thead { display: none; }
+        .stats-table tr { display: block; margin-bottom: 1rem; border: 1px solid var(--border); border-radius: 10px; padding: 1rem; }
+        .stats-table td { display: block; border: none; padding: 0.35rem 0; }
+        .stats-table td::before {
+            content: attr(data-label);
+            font-weight: 600; font-size: 0.75rem; color: var(--text-muted);
+            display: block; margin-bottom: 0.15rem;
         }
     }
 </style>
@@ -111,8 +68,8 @@
 
 {% block content %}
 <div class="page-header" style="margin-bottom: 1.5rem;">
-    <h1 class="page-title">📅 Подписки и размещения</h1>
-    <p class="page-subtitle">Управление рекламными размещениями на ТВ-экранах</p>
+    <h1 class="page-title">📊 Рекламные кампании и аналитика</h1>
+    <p class="page-subtitle">Статистика размещений: показы, OTS, стоимость и переходы по каждому ТВ</p>
 </div>
 
 {% if error %}
@@ -123,207 +80,48 @@
 <div class="alert alert-success">{{ success }}</div>
 {% endif %}
 
-<div class="grid grid-2">
-    <!-- Левая колонка: Мои подписки -->
-    <div>
-        <!-- Тариф -->
-        <div class="tariff-card">
-            <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem;">ВАШ ТАРИФ</div>
-            <div class="tariff-name">🏷️ Базовый</div>
-            <div class="tariff-price">7000 ₽ <span>/ месяц</span></div>
-            <div style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;">
-                Размещение рекламы на 1 ТВ-экране
-            </div>
-        </div>
-        
-        <!-- Активные подписки -->
-        <div class="card" style="margin-bottom: 1.5rem;">
-            <div class="card-header">
-                <h3 class="card-title">✅ Активные подписки ({{ active_subscriptions|length }})</h3>
-            </div>
-            
-            {% if active_subscriptions %}
-            {% for s in active_subscriptions %}
-            <div class="subscription-card">
-                <div class="sub-tv">
-                    <div class="name">{{ s.tv.name }}</div>
-                    <div class="venue">📍 {{ s.tv.venue_name or s.tv.address or '—' }}</div>
-                </div>
-                <div class="sub-dates">
-                    <div>{{ s.start_date.strftime('%d.%m') }} — {{ s.end_date.strftime('%d.%m.%Y') }}</div>
-                    <div class="days-left">Осталось {{ s.days_left }} дн.</div>
-                </div>
-                <div class="sub-price">
-                    <div class="amount">{{ "%.0f"|format(s.price) }} ₽</div>
-                    <span class="badge badge-success" style="font-size: 0.65rem;">Активна</span>
-                </div>
-                <div>
-                    <a href="/advertiser/subscriptions/{{ s.id }}/extend" class="btn btn-secondary btn-sm">Продлить</a>
-                </div>
-            </div>
-            {% endfor %}
-            {% else %}
-            <div style="text-align: center; padding: 2rem; color: var(--text-muted);">
-                <p>У вас нет активных подписок</p>
-                <p style="font-size: 0.85rem;">Оформите размещение на ТВ-экране справа →</p>
-            </div>
-            {% endif %}
-        </div>
-        
-        <!-- Завершённые подписки -->
-        {% if expired_subscriptions %}
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title" style="color: var(--text-muted);">📜 Завершённые ({{ expired_subscriptions|length }})</h3>
-            </div>
-            {% for s in expired_subscriptions %}
-            <div class="subscription-card expired">
-                <div class="sub-tv">
-                    <div class="name">{{ s.tv.name }}</div>
-                    <div class="venue">{{ s.tv.venue_name or '—' }}</div>
-                </div>
-                <div class="sub-dates">
-                    {{ s.start_date.strftime('%d.%m') }} — {{ s.end_date.strftime('%d.%m.%Y') }}
-                </div>
-                <div class="sub-price">
-                    <div class="amount" style="color: var(--text-muted);">{{ "%.0f"|format(s.price) }} ₽</div>
-                    <span class="badge badge-danger" style="font-size: 0.65rem;">Завершена</span>
-                </div>
-                <div>
-                    <a href="/advertiser/subscriptions?renew={{ s.tv_id }}" class="btn btn-secondary btn-sm">Возобновить</a>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-        {% endif %}
-    </div>
-
-    <!-- Правая колонка: Оформить подписку -->
-    <div class="card">
-        <div class="card-header">
-            <h3 class="card-title">➕ Оформить размещение</h3>
-        </div>
-        
-        <form method="POST" action="/advertiser/subscriptions/create" id="subscription-form">
-            <div class="form-group">
-                <label class="form-label">Выберите ТВ-экран *</label>
-                <select name="tv_id" class="form-input" required id="tv_select">
-                    <option value="">— Выберите ТВ —</option>
-                    {% for tv in available_tvs %}
-                    <option value="{{ tv.id }}">{{ tv.name }} — {{ tv.venue_name or tv.address or 'Без адреса' }} {% if tv.city %}({{ tv.city }}){% endif %}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            
-            <div class="grid grid-2" style="gap: 1rem;">
-                <div class="form-group" style="margin-bottom: 0.75rem;">
-                    <label class="form-label">Дата начала *</label>
-                    <input type="date" name="start_date" id="start_date" class="form-input" required min="{{ today }}" value="{{ today }}" onchange="calculatePrice()">
-                </div>
-                <div class="form-group" style="margin-bottom: 0.75rem;">
-                    <label class="form-label">Дата окончания *</label>
-                    <input type="date" name="end_date" id="end_date" class="form-input" required min="{{ today }}" onchange="calculatePrice()">
-                </div>
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label">Заголовок рекламы *</label>
-                <input type="text" name="title" class="form-input" required placeholder="Например: Скидка 20% на всё!">
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label">Ссылка на сайт *</label>
-                <input type="url" name="url" class="form-input" required placeholder="https://your-site.ru/promo">
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label">Описание</label>
-                <textarea name="description" class="form-input" rows="2" placeholder="Краткое описание..."></textarea>
-            </div>
-            
-            <!-- Расчёт -->
-            <div style="background: var(--secondary); border-radius: 10px; padding: 1rem; margin-bottom: 1rem;">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                    <span style="color: var(--text-muted);">Тариф:</span>
-                    <span>Базовый — 7000 ₽/месяц</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                    <span style="color: var(--text-muted);">Дней:</span>
-                    <span id="months_count">0</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; padding-top: 0.75rem; border-top: 1px solid var(--border);">
-                    <span style="font-weight: 600;">К оплате:</span>
-                    <span id="price_display" style="font-size: 1.5rem; font-weight: 700; color: var(--accent);">0 ₽</span>
-                </div>
-                <input type="hidden" name="price" id="price_input" value="0">
-            </div>
-            
-            <div id="balance_warning" style="display: none; background: rgba(233, 69, 96, 0.1); border: 1px solid var(--accent); border-radius: 8px; padding: 0.75rem; margin-bottom: 1rem; font-size: 0.9rem; color: var(--accent);">
-                ⚠️ Недостаточно средств. <a href="/advertiser/payments">Пополнить →</a>
-            </div>
-            
-            <button type="submit" id="submit_btn" class="btn btn-primary btn-lg" style="width: 100%;">
-                Оформить подписку
-            </button>
-        </form>
-    </div>
-</div>
-
-<!-- Доступные ТВ -->
-<div class="card" style="margin-top: 1.5rem;">
+<div class="card">
     <div class="card-header">
-        <h3 class="card-title">📺 Доступные ТВ-экраны ({{ available_tvs|length }})</h3>
+        <h3 class="card-title">📺 Размещения по ТВ-экранам</h3>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem;">
+            Расчёт показов: 12 ч рабочий день, блок 5 мин (15 роликов). При меньшем числе рекламодателей на ТВ — больше показов подряд.
+        </p>
     </div>
-    
-    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem;">
-        {% for tv in available_tvs %}
-        <div class="tv-select-card" onclick="selectTV({{ tv.id }})">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                <div>
-                    <div style="font-weight: 600;">{{ tv.name }}</div>
-                    <div style="font-size: 0.85rem; color: var(--text-muted);">📍 {{ tv.venue_name or '—' }}</div>
-                    <div style="font-size: 0.75rem; color: var(--text-muted);">
-                        {% if tv.city %}{{ tv.city }}, {% endif %}{{ tv.address or '' }}
-                    </div>
-                </div>
-                <div style="text-align: right;">
-                    <div style="font-weight: 700; color: var(--accent);">7000 ₽</div>
-                    <div style="font-size: 0.7rem; color: var(--text-muted);">/ месяц</div>
-                </div>
-            </div>
-            <div style="margin-top: 0.5rem;">
-                <span class="badge badge-info">{{ categories.get(tv.category, tv.category or 'Другое') }}</span>
-            </div>
-        </div>
-        {% endfor %}
+    {% if campaign_rows %}
+    <div style="overflow-x: auto;">
+        <table class="stats-table">
+            <thead>
+                <tr>
+                    <th>Рекламная кампания / ТВ</th>
+                    <th>Период</th>
+                    <th>Показов (расчёт)</th>
+                    <th>OTS (увидели)</th>
+                    <th>Стоимость 1 OTS</th>
+                    <th>Переходы на сайт</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in campaign_rows %}
+                <tr>
+                    <td>
+                        <div class="campaign-name">{{ row.campaign_name }}</div>
+                        <div class="tv-venue">📍 {{ row.tv_name }} — {{ row.venue_name }}</div>
+                    </td>
+                    <td data-label="Период">{{ row.period_start.strftime('%d.%m.%Y') }} — {{ row.period_end.strftime('%d.%m.%Y') }}</td>
+                    <td data-label="Показов"><span class="stat-num">{{ row.showings }}</span></td>
+                    <td data-label="OTS"><span class="stat-ots">{{ row.ots }}</span></td>
+                    <td data-label="Стоимость 1 OTS">{{ "%.2f"|format(row.cost_per_ots) }} ₽</td>
+                    <td data-label="Переходы"><span class="stat-clicks">{{ row.clicks }}</span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
+    {% else %}
+    <div style="text-align: center; padding: 3rem; color: var(--text-muted);">
+        <p style="font-size: 1.1rem;">У вас пока нет размещений.</p>
+        <p style="font-size: 0.9rem;">Оформите размещение через менеджера — здесь будет отображаться статистика по кампаниям.</p>
+    </div>
+    {% endif %}
 </div>
-
-<script>
-const PRICE_PER_MONTH = 7000;
-
-function calculatePrice() {
-    const startDate = document.getElementById('start_date').value;
-    const endDate = document.getElementById('end_date').value;
-    
-    if (startDate && endDate) {
-        const start = new Date(startDate);
-        const end = new Date(endDate);
-        const days = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
-        
-        if (days > 0) {
-            const months = Math.ceil(days / 30);
-            const price = months * PRICE_PER_MONTH;
-            document.getElementById('price_display').textContent = price.toLocaleString('ru-RU') + ' ₽';
-            document.getElementById('price_input').value = price;
-            document.getElementById('months_count').textContent = months;
-        }
-    }
-}
-
-function selectTV(tvId) {
-    document.getElementById('tv_select').value = tvId;
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-</script>
 {% endblock %}

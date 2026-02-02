@@ -639,24 +639,62 @@ async def advertiser_stats(request: Request, period: str = None, date_from: str 
     })
 
 
+# Показы: 12ч рабочий день, блок 5 мин, 15 роликов в блоке → 144 блока/день * 15 = 2160 слотов/день
+SLOTS_PER_DAY = 12 * (60 // 5) * 15  # 2160
+
+
 @router.get("/advertiser/subscriptions", response_class=HTMLResponse)
 async def advertiser_subscriptions(request: Request, error: str = None, success: str = None, user: User = Depends(require_role_for_page(Role.ADVERTISER)), db: Session = Depends(get_db)):
-    """Advertiser subscriptions page."""
+    """Advertiser subscriptions page — только статистика по кампаниям."""
     subscriptions = db.query(Subscription).options(joinedload(Subscription.tv)).filter(Subscription.advertiser_id == user.id).order_by(Subscription.end_date.desc()).all()
-    available_tvs = db.query(TV).filter(TV.is_active == True).all()
     
-    # Mark active subscriptions and calculate days left
     today = date.today()
-    active_subscriptions = []
-    expired_subscriptions = []
+    campaign_rows = []
     
     for s in subscriptions:
         s.is_active = s.start_date <= today <= s.end_date
         s.days_left = (s.end_date - today).days if s.is_active else 0
-        if s.is_active:
-            active_subscriptions.append(s)
-        else:
-            expired_subscriptions.append(s)
+        
+        # Количество рекламодателей на этом ТВ в период подписки (пересекающийся период)
+        overlapping = db.query(Subscription).filter(
+            Subscription.tv_id == s.tv_id,
+            Subscription.start_date <= s.end_date,
+            Subscription.end_date >= s.start_date,
+        ).count()
+        num_advertisers = max(1, overlapping)
+        
+        days_in_period = (s.end_date - s.start_date).days + 1
+        showings_per_day = SLOTS_PER_DAY // num_advertisers
+        showings = showings_per_day * days_in_period
+        
+        # OTS: среднее кол-во посетителей ТВ в месяц * (дни показов / 30)
+        clients_per_day = (s.tv.clients_per_day or 100) if s.tv else 100
+        monthly_visitors = clients_per_day * 30
+        ots = int(monthly_visitors * (days_in_period / 30.0))
+        
+        price_float = float(s.price)
+        cost_per_ots = (price_float / ots) if ots else 0
+        
+        # Клики по ссылке с этого ТВ (TVLink для данного рекламодателя и ТВ)
+        link = db.query(TVLink).filter(TVLink.tv_id == s.tv_id, TVLink.advertiser_id == user.id).first()
+        clicks = (link.clicks or 0) if link else 0
+        
+        campaign_name = (link.title if link and link.title else s.tv.name) if s.tv else "—"
+        
+        campaign_rows.append({
+            "subscription": s,
+            "campaign_name": campaign_name,
+            "tv_name": s.tv.name if s.tv else "—",
+            "venue_name": (s.tv.venue_name or s.tv.address or "—") if s.tv else "—",
+            "period_start": s.start_date,
+            "period_end": s.end_date,
+            "days_in_period": days_in_period,
+            "showings": showings,
+            "ots": ots,
+            "cost_per_ots": cost_per_ots,
+            "clicks": clicks,
+            "price": price_float,
+        })
     
     error_message = None
     if error == "balance":
@@ -669,13 +707,10 @@ async def advertiser_subscriptions(request: Request, error: str = None, success:
         success_message = "✓ Подписка успешно оформлена! Размещение активно."
     
     return templates.TemplateResponse("advertiser_subscriptions.html", {
-        "request": request, "user": user, 
-        "active_subscriptions": active_subscriptions,
-        "expired_subscriptions": expired_subscriptions,
-        "available_tvs": available_tvs, "balance": f"{float(user.balance or 0):.0f}",
+        "request": request, "user": user,
+        "campaign_rows": campaign_rows,
         "today": date.today().strftime("%Y-%m-%d"),
         "error": error_message, "success": success_message,
-        "categories": VenueCategory.CHOICES, "audiences": TargetAudience.CHOICES
     })
 
 
