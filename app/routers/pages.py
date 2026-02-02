@@ -416,9 +416,38 @@ async def advertiser_dashboard(request: Request, user: User = Depends(require_ro
     }
     
     return templates.TemplateResponse("advertiser_dashboard.html", {
-        "request": request, "user": user, "stats": stats, 
+        "request": request, "user": user, "stats": stats,
         "payments": payments, "campaigns": campaigns, "subscriptions": subscriptions
     })
+
+
+CAMPAIGN_REQUEST_EMAIL = "av.vysokikh@gmail.com"
+
+
+@router.post("/advertiser/campaign-request", response_class=HTMLResponse)
+async def advertiser_campaign_request(
+    request: Request,
+    what_advertise: str = Form(...),
+    business_type: str = Form(...),
+    business_address: str = Form(...),
+    website: str = Form(""),
+    user: User = Depends(require_role_for_page(Role.ADVERTISER)),
+):
+    """Отправка заявки на рекламную кампанию на почту av.vysokikh@gmail.com."""
+    from app.services.notification_service import NotificationService
+
+    user_name = (user.company_name or f"{user.first_name or ''} {user.last_name or ''}".strip() or user.email)
+    subject = f"Заявка на рекламную кампанию: {user_name}"
+    body_html = f"""
+    <p><strong>От:</strong> {user_name} ({user.email})</p>
+    <p><strong>Что рекламирует:</strong></p>
+    <p>{what_advertise.replace(chr(10), '<br>')}</p>
+    <p><strong>Вид бизнеса:</strong> {business_type}</p>
+    <p><strong>Адрес бизнеса:</strong> {business_address}</p>
+    <p><strong>Сайт:</strong> {website or '—'}</p>
+    """
+    await NotificationService.send_email(CAMPAIGN_REQUEST_EMAIL, subject, body_html)
+    return RedirectResponse(url="/advertiser?success=campaign_request", status_code=303)
 
 
 def send_video_email(user_email: str, user_name: str, company_name: str, comment: str, video_path: str) -> bool:

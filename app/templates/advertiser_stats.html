@@ -133,7 +133,7 @@
 {% block nav %}
 <a href="/advertiser">Дашборд</a>
 <a href="/advertiser/stats" class="active">Статистика</a>
-<a href="/advertiser/subscriptions">Подписки</a>
+<a href="/advertiser/subscriptions">Аналитика</a>
 <a href="/advertiser/profile">Профиль</a>
 <form method="POST" action="/switch-role" style="display: inline-block; margin: 0;">
     <input type="hidden" name="role" value="venue">
@@ -276,7 +276,7 @@
     <div style="text-align: center; padding: 3rem; color: var(--text-muted);">
         <p style="font-size: 1.25rem; margin-bottom: 0.5rem;">📭 Нет данных</p>
         <p style="font-size: 0.9rem;">У вас пока нет активных размещений на ТВ-экранах</p>
-        <a href="/advertiser/subscriptions" class="btn btn-primary" style="margin-top: 1rem;">Оформить размещение</a>
+        <a href="/advertiser" class="btn btn-primary" style="margin-top: 1rem;">Создать рекламную кампанию</a>
     </div>
     {% endif %}
 </div>

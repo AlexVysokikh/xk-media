@@ -83,7 +83,7 @@
 {% block nav %}
 <a href="/advertiser" class="active">Дашборд</a>
 <a href="/advertiser/stats">Статистика</a>
-<a href="/advertiser/subscriptions">Подписки</a>
+<a href="/advertiser/subscriptions">Аналитика</a>
 <a href="/advertiser/profile">Профиль</a>
 <form method="POST" action="/switch-role" style="display: inline-block; margin: 0;">
     <input type="hidden" name="role" value="venue">
@@ -93,6 +93,10 @@
 {% endblock %}
 
 {% block content %}
+{% if request.query_params.get('success') == 'campaign_request' %}
+<div class="alert alert-success" style="margin-bottom: 1rem;">✅ Заявка на рекламную кампанию отправлена. Мы свяжемся с вами в ближайшее время.</div>
+{% endif %}
+
 <div class="page-header" style="margin-bottom: 1.5rem;">
     <h1 class="page-title">👋 Добро пожаловать, {{ user.first_name or user.company_name or user.email }}!</h1>
     <p class="page-subtitle">Обзор ваших рекламных кампаний</p>
@@ -198,8 +202,8 @@
         <!-- Активные подписки -->
         <div class="card">
             <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 0.75rem; margin-bottom: 0.75rem;">
-                <h3 class="card-title" style="font-size: 1.1rem;">📅 Подписки</h3>
-                <a href="/advertiser/subscriptions" class="btn btn-primary btn-sm" style="padding: 0.4rem 0.75rem; font-size: 0.8rem;">+ Оформить</a>
+                <h3 class="card-title" style="font-size: 1.1rem;">📅 Размещения</h3>
+                <button type="button" class="btn btn-primary btn-sm" style="padding: 0.4rem 0.75rem; font-size: 0.8rem;" onclick="document.getElementById('campaign-modal').style.display='flex'">Создать рекламную кампанию</button>
             </div>
             {% if subscriptions %}
             <div style="display: flex; flex-direction: column; gap: 0.5rem;">
@@ -218,7 +222,7 @@
             </div>
             {% if subscriptions|length > 3 %}
             <div style="margin-top: 0.5rem; text-align: center;">
-                <a href="/advertiser/subscriptions" style="font-size: 0.8rem;">Все подписки ({{ subscriptions|length }}) →</a>
+                <a href="/advertiser/subscriptions" style="font-size: 0.8rem;">Вся аналитика ({{ subscriptions|length }}) →</a>
             </div>
             {% endif %}
             {% else %}
@@ -297,6 +301,35 @@
             </div>
             <a href="/advertiser/profile" class="btn btn-secondary btn-sm" style="padding: 0.4rem 0.75rem;">Профиль</a>
         </div>
+    </div>
+</div>
+
+<!-- Модальное окно: Создать рекламную кампанию -->
+<div id="campaign-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center; padding: 1rem;" onclick="if(event.target===this) this.style.display='none'">
+    <div class="card" style="max-width: 480px; width: 100%; margin: 0;" onclick="event.stopPropagation()">
+        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+            <h3 class="card-title">📢 Создать рекламную кампанию</h3>
+            <button type="button" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted);" onclick="document.getElementById('campaign-modal').style.display='none'">&times;</button>
+        </div>
+        <form method="POST" action="/advertiser/campaign-request">
+            <div class="form-group">
+                <label class="form-label">Что рекламируете? *</label>
+                <textarea name="what_advertise" class="form-input" rows="3" required placeholder="Опишите товар, услугу или акцию"></textarea>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Вид бизнеса *</label>
+                <input type="text" name="business_type" class="form-input" required placeholder="Например: кофейня, автосервис, салон красоты">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Адрес бизнеса *</label>
+                <input type="text" name="business_address" class="form-input" required placeholder="Город, улица, дом">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Сайт</label>
+                <input type="url" name="website" class="form-input" placeholder="https://...">
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%;">Отправить заявку</button>
+        </form>
     </div>
 </div>
 
