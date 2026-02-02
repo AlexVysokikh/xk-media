@@ -241,7 +241,6 @@
                         <div style="font-size: 0.7rem; color: var(--text-muted);">{{ s.start_date.strftime('%d.%m') }} — {{ s.end_date.strftime('%d.%m.%Y') }}</div>
                     </div>
                     <div style="text-align: right; flex-shrink: 0; margin-left: 0.5rem;">
-                        <div style="font-weight: 600; font-size: 0.9rem;">{{ "%.0f"|format(s.price) }} ₽</div>
                         {% if s.is_active %}<span class="badge badge-success" style="font-size: 0.6rem; padding: 0.15rem 0.4rem;">●</span>{% endif %}
                     </div>
                 </div>

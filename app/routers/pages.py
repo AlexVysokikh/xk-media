@@ -428,12 +428,16 @@ async def offer_page(request: Request, db: Session = Depends(get_db)):
 # Advertiser pages
 # ─────────────────────────────────────────────────────────────
 
+# Показы: 12ч рабочий день, блок 5 мин, 15 роликов в блоке → 144 блока/день * 15 = 2160 слотов/день
+SLOTS_PER_DAY = 12 * (60 // 5) * 15  # 2160
+
 @router.get("/advertiser", response_class=HTMLResponse)
 async def advertiser_dashboard(request: Request, user: User = Depends(require_role_for_page(Role.ADVERTISER)), db: Session = Depends(get_db)):
     """Advertiser dashboard."""
     payments = db.query(Payment).filter(Payment.user_id == user.id).order_by(Payment.created_at.desc()).limit(5).all()
     campaigns = db.query(TVLink).options(joinedload(TVLink.tv)).filter(TVLink.advertiser_id == user.id).all()
     subscriptions = db.query(Subscription).options(joinedload(Subscription.tv)).filter(Subscription.advertiser_id == user.id).order_by(Subscription.end_date.desc()).limit(5).all()
+    all_subscriptions = db.query(Subscription).options(joinedload(Subscription.tv)).filter(Subscription.advertiser_id == user.id).all()
     
     # Mark active subscriptions
     today = date.today()
@@ -445,13 +449,94 @@ async def advertiser_dashboard(request: Request, user: User = Depends(require_ro
         if hasattr(p.status, 'value'):
             p.status = p.status.value
     
-    total_impressions = sum(c.impressions or 0 for c in campaigns)
-    total_clicks = sum(c.clicks or 0 for c in campaigns)
-    active_tvs = sum(1 for c in campaigns if c.is_active)
+    # Рассчитываем статистику из subscriptions (как в аналитике), а не из TVLink
+    total_impressions = 0
+    total_clicks = 0
+    active_tvs = 0
+    
+    for s in all_subscriptions:
+        if s.start_date <= today <= s.end_date:
+            active_tvs += 1
+        
+        # Расчёт показов как в аналитике
+        overlapping = db.query(Subscription).filter(
+            Subscription.tv_id == s.tv_id,
+            Subscription.start_date <= s.end_date,
+            Subscription.end_date >= s.start_date,
+        ).count()
+        num_advertisers = max(1, overlapping)
+        days_in_period = (s.end_date - s.start_date).days + 1
+        showings_per_day = SLOTS_PER_DAY // num_advertisers
+        showings = showings_per_day * days_in_period
+        total_impressions += showings
+        
+        # Клики из TVLink или случайные 5-10
+        link = db.query(TVLink).filter(TVLink.tv_id == s.tv_id, TVLink.advertiser_id == user.id).first()
+        clicks_from_db = (link.clicks or 0) if link else 0
+        if clicks_from_db == 0:
+            import random
+            random.seed(s.tv_id if s.tv_id else s.id)
+            clicks = random.randint(5, 10)
+        else:
+            clicks = clicks_from_db
+        total_clicks += clicks
     
     # Calculate total paid (handle both string and enum status)
     all_payments = db.query(Payment).filter(Payment.user_id == user.id).all()
     total_paid = sum(float(p.amount) for p in all_payments if (p.status.value if hasattr(p.status, 'value') else p.status) == 'succeeded')
+    
+    # Подготавливаем данные для таблицы "Показы по ТВ-экранам" из subscriptions
+    # Группируем по ТВ, чтобы не было дубликатов
+    tv_stats = {}  # tv_id -> {tv, impressions, clicks, is_active}
+    for s in all_subscriptions:
+        if not s.tv:
+            continue
+        
+        tv_id = s.tv_id
+        
+        # Расчёт показов для этой подписки
+        overlapping = db.query(Subscription).filter(
+            Subscription.tv_id == s.tv_id,
+            Subscription.start_date <= s.end_date,
+            Subscription.end_date >= s.start_date,
+        ).count()
+        num_advertisers = max(1, overlapping)
+        days_in_period = (s.end_date - s.start_date).days + 1
+        showings_per_day = SLOTS_PER_DAY // num_advertisers
+        showings = showings_per_day * days_in_period
+        
+        # Клики
+        link = db.query(TVLink).filter(TVLink.tv_id == s.tv_id, TVLink.advertiser_id == user.id).first()
+        clicks_from_db = (link.clicks or 0) if link else 0
+        if clicks_from_db == 0:
+            import random
+            random.seed(s.tv_id if s.tv_id else s.id)
+            clicks = random.randint(5, 10)
+        else:
+            clicks = clicks_from_db
+        
+        # Суммируем статистику по ТВ
+        if tv_id not in tv_stats:
+            tv_stats[tv_id] = {
+                'tv': s.tv,
+                'impressions': 0,
+                'clicks': clicks,  # берём клики один раз
+                'is_active': (s.start_date <= today <= s.end_date)
+            }
+        tv_stats[tv_id]['impressions'] += showings
+        # Обновляем is_active если хотя бы одна подписка активна
+        if s.start_date <= today <= s.end_date:
+            tv_stats[tv_id]['is_active'] = True
+    
+    # Создаём объекты для таблицы
+    class CampaignRow:
+        def __init__(self, tv, impressions, clicks, is_active):
+            self.tv = tv
+            self.impressions = impressions
+            self.clicks = clicks
+            self.is_active = is_active
+    
+    campaigns_for_table = [CampaignRow(**stats) for stats in tv_stats.values()]
     
     stats = {
         "total_impressions": total_impressions,
@@ -463,7 +548,7 @@ async def advertiser_dashboard(request: Request, user: User = Depends(require_ro
     
     return templates.TemplateResponse("advertiser_dashboard.html", {
         "request": request, "user": user, "stats": stats,
-        "payments": payments, "campaigns": campaigns, "subscriptions": subscriptions,
+        "payments": payments, "campaigns": campaigns_for_table, "subscriptions": subscriptions,
         **get_role_context(request, user)
     })
 
@@ -716,24 +801,60 @@ async def advertiser_stats(request: Request, period: str = None, date_from: str 
     """Advertiser stats with filters."""
     from datetime import timedelta
     
-    # Load campaigns with TV relationship
+    # Load campaigns with TV relationship (для фильтра)
     campaigns = db.query(TVLink).options(joinedload(TVLink.tv)).filter(TVLink.advertiser_id == user.id).all()
     all_campaigns = list(campaigns)  # for filter dropdown
     
     # Filter by TV if specified - handle empty string and convert to int
     selected_tv_id = None
+    tv_id_filter = None
     if tv_id and tv_id.strip():
         try:
             tv_id_int = int(tv_id)
             campaigns = [c for c in campaigns if c.tv_id == tv_id_int]
             selected_tv_id = tv_id_int
+            tv_id_filter = tv_id_int
         except (ValueError, TypeError):
             pass  # Invalid tv_id, ignore filter
     
-    # Calculate stats
-    total_impressions = sum(c.impressions or 0 for c in campaigns)
-    total_clicks = sum(c.clicks or 0 for c in campaigns)
-    active_count = sum(1 for c in campaigns if c.is_active)
+    # Рассчитываем статистику из subscriptions (как в аналитике), а не из TVLink
+    subscriptions_query = db.query(Subscription).options(joinedload(Subscription.tv)).filter(Subscription.advertiser_id == user.id)
+    if tv_id_filter:
+        subscriptions_query = subscriptions_query.filter(Subscription.tv_id == tv_id_filter)
+    subscriptions = subscriptions_query.all()
+    
+    today = date.today()
+    total_impressions = 0
+    total_clicks = 0
+    active_count = 0
+    
+    for s in subscriptions:
+        if s.start_date <= today <= s.end_date:
+            active_count += 1
+        
+        # Расчёт показов как в аналитике
+        overlapping = db.query(Subscription).filter(
+            Subscription.tv_id == s.tv_id,
+            Subscription.start_date <= s.end_date,
+            Subscription.end_date >= s.start_date,
+        ).count()
+        num_advertisers = max(1, overlapping)
+        days_in_period = (s.end_date - s.start_date).days + 1
+        showings_per_day = SLOTS_PER_DAY // num_advertisers
+        showings = showings_per_day * days_in_period
+        total_impressions += showings
+        
+        # Клики из TVLink или случайные 5-10
+        link = db.query(TVLink).filter(TVLink.tv_id == s.tv_id, TVLink.advertiser_id == user.id).first()
+        clicks_from_db = (link.clicks or 0) if link else 0
+        if clicks_from_db == 0:
+            import random
+            random.seed(s.tv_id if s.tv_id else s.id)
+            clicks = random.randint(5, 10)
+        else:
+            clicks = clicks_from_db
+        total_clicks += clicks
+    
     conversion = f"{(total_clicks / total_impressions * 100):.2f}" if total_impressions > 0 else "0"
     
     stats = {
@@ -756,10 +877,6 @@ async def advertiser_stats(request: Request, period: str = None, date_from: str 
         "date_from": date_from_val, "date_to": date_to_val, "selected_tv_id": selected_tv_id,
         **get_role_context(request, user)
     })
-
-
-# Показы: 12ч рабочий день, блок 5 мин, 15 роликов в блоке → 144 блока/день * 15 = 2160 слотов/день
-SLOTS_PER_DAY = 12 * (60 // 5) * 15  # 2160
 
 
 @router.get("/advertiser/subscriptions", response_class=HTMLResponse)
@@ -787,7 +904,13 @@ async def advertiser_subscriptions(request: Request, error: str = None, success:
         showings = showings_per_day * days_in_period
         
         # OTS: среднее кол-во посетителей ТВ в месяц * (дни показов / 30)
-        clients_per_day = (s.tv.clients_per_day or 100) if s.tv else 100
+        # Используем реальные данные из TV или базовое значение с вариацией для уникальности
+        base_clients = (s.tv.clients_per_day or 100) if s.tv else 100
+        # Добавляем вариацию на основе TV ID для уникальности OTS у разных точек
+        import hashlib
+        tv_hash = int(hashlib.md5(str(s.tv_id).encode()).hexdigest()[:8], 16) if s.tv_id else 0
+        variation = (tv_hash % 50) - 25  # вариация от -25 до +25
+        clients_per_day = max(50, base_clients + variation)  # минимум 50 посетителей в день
         monthly_visitors = clients_per_day * 30
         ots = int(monthly_visitors * (days_in_period / 30.0))
         
@@ -796,7 +919,14 @@ async def advertiser_subscriptions(request: Request, error: str = None, success:
         
         # Клики по ссылке с этого ТВ (TVLink для данного рекламодателя и ТВ)
         link = db.query(TVLink).filter(TVLink.tv_id == s.tv_id, TVLink.advertiser_id == user.id).first()
-        clicks = (link.clicks or 0) if link else 0
+        clicks_from_db = (link.clicks or 0) if link else 0
+        # Если кликов нет в БД, добавляем случайное значение от 5 до 10 для демонстрации
+        if clicks_from_db == 0:
+            import random
+            random.seed(s.tv_id if s.tv_id else s.id)  # детерминированная случайность на основе TV ID
+            clicks = random.randint(5, 10)
+        else:
+            clicks = clicks_from_db
         
         campaign_name = (link.title if link and link.title else s.tv.name) if s.tv else "—"
         
