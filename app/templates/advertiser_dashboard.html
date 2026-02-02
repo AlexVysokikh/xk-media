@@ -84,7 +84,6 @@
 <a href="/advertiser" class="active">Дашборд</a>
 <a href="/advertiser/stats">Статистика</a>
 <a href="/advertiser/subscriptions">Подписки</a>
-<a href="/advertiser/payments">Платежи</a>
 <a href="/advertiser/profile">Профиль</a>
 <form method="POST" action="/switch-role" style="display: inline-block; margin: 0;">
     <input type="hidden" name="role" value="venue">
@@ -100,15 +99,7 @@
 </div>
 
 <!-- Компактные метрики в одну строку -->
-<div class="grid grid-4" style="margin-bottom: 1.5rem;">
-    <div class="metric-card highlight">
-        <div class="metric-icon">💰</div>
-        <div class="metric-content">
-            <div class="metric-value">{{ stats.balance }} ₽</div>
-            <div class="metric-label">Баланс</div>
-            <a href="/advertiser/payments" class="btn btn-sm" style="margin-top: 0.5rem; padding: 0.35rem 0.75rem; font-size: 0.75rem; background: rgba(255,255,255,0.2); border: none; color: white;">+ Пополнить</a>
-        </div>
-    </div>
+<div class="grid grid-3" style="margin-bottom: 1.5rem;">
     <div class="metric-card">
         <div class="metric-icon" style="color: var(--accent);">📺</div>
         <div class="metric-content">
@@ -237,40 +228,6 @@
             {% endif %}
         </div>
 
-        <!-- Последние платежи -->
-        <div class="card">
-            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 0.75rem; margin-bottom: 0.75rem;">
-                <h3 class="card-title" style="font-size: 1.1rem;">💳 Платежи</h3>
-                <a href="/advertiser/payments" style="font-size: 0.8rem;">Все →</a>
-            </div>
-            {% if payments %}
-            <div style="display: flex; flex-direction: column; gap: 0.4rem;">
-                {% for p in payments[:4] %}
-                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.4rem 0; border-bottom: 1px solid var(--border);">
-                    <div>
-                        <span style="font-weight: 500;">+{{ "%.0f"|format(p.amount) }} ₽</span>
-                        <span style="font-size: 0.7rem; color: var(--text-muted); margin-left: 0.5rem;">{{ p.created_at.strftime('%d.%m.%y') }}</span>
-                    </div>
-                    {% if p.status == 'succeeded' %}
-                    <span style="color: var(--success); font-size: 0.9rem;">✓</span>
-                    {% elif p.status in ['pending', 'waiting'] %}
-                    <span style="color: var(--warning); font-size: 0.9rem;">⏳</span>
-                    {% else %}
-                    <span style="color: var(--accent); font-size: 0.9rem;">✗</span>
-                    {% endif %}
-                </div>
-                {% endfor %}
-            </div>
-            <div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--border); display: flex; justify-content: space-between; font-size: 0.85rem;">
-                <span style="color: var(--text-muted);">Всего:</span>
-                <span style="font-weight: 600; color: var(--success);">{{ stats.total_paid }} ₽</span>
-            </div>
-            {% else %}
-            <div style="text-align: center; padding: 1rem; color: var(--text-muted); font-size: 0.9rem;">
-                Платежей пока нет
-            </div>
-            {% endif %}
-        </div>
     </div>
 </div>
 

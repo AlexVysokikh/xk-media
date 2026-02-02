@@ -549,48 +549,9 @@ async def advertiser_upload_video(
 
 
 @router.get("/advertiser/payments", response_class=HTMLResponse)
-async def advertiser_payments_page(request: Request, warning: str = None, error: str = None, msg: str = None, success: str = None, user: User = Depends(require_role_for_page(Role.ADVERTISER)), db: Session = Depends(get_db)):
-    """Advertiser payments page."""
-    payments = db.query(Payment).filter(Payment.user_id == user.id).order_by(Payment.created_at.desc()).all()
-    
-    # Normalize status to string for template
-    for p in payments:
-        if hasattr(p.status, 'value'):
-            p.status = p.status.value
-    
-    # Calculate stats
-    success_payments = [p for p in payments if p.status == 'succeeded']
-    total_paid = sum(float(p.amount) for p in success_payments)
-    
-    # Total spent on subscriptions
-    subscriptions = db.query(Subscription).filter(Subscription.advertiser_id == user.id).all()
-    total_spent = sum(float(s.price) for s in subscriptions)
-    
-    stats = {
-        "total_paid": f"{total_paid:.0f}",
-        "total_spent": f"{total_spent:.0f}",
-        "payments_count": len(payments),
-        "success_count": len(success_payments)
-    }
-    
-    warning_message = None
-    error_message = None
-    
-    if error == "yookassa":
-        error_message = f"⚠️ Ошибка YooKassa: {msg or 'Не удалось создать платеж. Проверьте настройки или попробуйте позже.'}"
-    elif warning == "yookassa":
-        warning_message = "⚠️ YooKassa не настроен. Платёж создан, но оплата недоступна."
-    elif warning == "paykeeper":
-        warning_message = "⚠️ PayKeeper не настроен. Платёж создан, но оплата недоступна."
-    
-    success_message = None
-    if success == "paid":
-        success_message = "✓ Платёж успешно проведён! Баланс пополнен."
-    
-    return templates.TemplateResponse("advertiser_payments.html", {
-        "request": request, "user": user, "payments": payments, "stats": stats,
-        "balance": f"{float(user.balance or 0):.0f}", "warning": warning_message, "error": error_message, "success": success_message
-    })
+async def advertiser_payments_page(request: Request, user: User = Depends(require_role_for_page(Role.ADVERTISER))):
+    """Страница платежей отключена — редирект в кабинет."""
+    return RedirectResponse(url="/advertiser", status_code=303)
 
 
 @router.post("/advertiser/payments/create-page", response_class=HTMLResponse)
