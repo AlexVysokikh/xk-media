@@ -712,7 +712,7 @@ async def advertiser_create_payment_page(request: Request, user: User = Depends(
 
 
 @router.get("/advertiser/stats", response_class=HTMLResponse)
-async def advertiser_stats(request: Request, period: str = None, date_from: str = None, date_to: str = None, tv_id: Optional[int] = Query(default=None), user: User = Depends(require_role_for_page(Role.ADVERTISER)), db: Session = Depends(get_db)):
+async def advertiser_stats(request: Request, period: str = None, date_from: str = None, date_to: str = None, tv_id: Optional[str] = Query(default=None), user: User = Depends(require_role_for_page(Role.ADVERTISER)), db: Session = Depends(get_db)):
     """Advertiser stats with filters."""
     from datetime import timedelta
     
@@ -720,11 +720,15 @@ async def advertiser_stats(request: Request, period: str = None, date_from: str 
     campaigns = db.query(TVLink).options(joinedload(TVLink.tv)).filter(TVLink.advertiser_id == user.id).all()
     all_campaigns = list(campaigns)  # for filter dropdown
     
-    # Filter by TV if specified
+    # Filter by TV if specified - handle empty string and convert to int
     selected_tv_id = None
-    if tv_id:
-        campaigns = [c for c in campaigns if c.tv_id == tv_id]
-        selected_tv_id = tv_id
+    if tv_id and tv_id.strip():
+        try:
+            tv_id_int = int(tv_id)
+            campaigns = [c for c in campaigns if c.tv_id == tv_id_int]
+            selected_tv_id = tv_id_int
+        except (ValueError, TypeError):
+            pass  # Invalid tv_id, ignore filter
     
     # Calculate stats
     total_impressions = sum(c.impressions or 0 for c in campaigns)
