@@ -213,8 +213,10 @@ class User(Base):
     last_name = Column(String(100), nullable=True)
     phone = Column(String(20), nullable=True)
     
-    # ─── Роль: admin, advertiser, venue ───
+    # ─── Роль: admin, advertiser, venue (основная — задаётся при регистрации) ───
     role = Column(String(20), default=Role.ADVERTISER, nullable=False, index=True)
+    # Вторая роль (только для назначения админом: рекламодатель + площадка)
+    secondary_role = Column(String(20), nullable=True, index=True)
     
     # ─── Данные компании (для рекламодателей и площадок) ───
     company_name = Column(String(300), nullable=True)     # Название компании
@@ -255,6 +257,18 @@ class User(Base):
     subscriptions = relationship("Subscription", back_populates="advertiser")
     payments = relationship("Payment", back_populates="user")
     tv_links = relationship("TVLink", back_populates="advertiser")
+
+    def has_advertiser_role(self) -> bool:
+        """Есть ли у пользователя роль рекламодателя (основная или вторая)."""
+        return self.role == Role.ADVERTISER or self.secondary_role == Role.ADVERTISER
+
+    def has_venue_role(self) -> bool:
+        """Есть ли у пользователя роль площадки (основная или вторая)."""
+        return self.role == Role.VENUE or self.secondary_role == Role.VENUE
+
+    def has_dual_roles(self) -> bool:
+        """Назначены ли обе роли (рекламодатель и площадка) — переключатель в ЛК показывается только тогда."""
+        return self.has_advertiser_role() and self.has_venue_role()
 
 
 # ─────────────────────────────────────────────────────────────
@@ -473,3 +487,20 @@ class SiteSettings(Base):
     # ─── Timestamps ───
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+# ─────────────────────────────────────────────────────────────
+# OAuthState model (для хранения OAuth state между запросами)
+# ─────────────────────────────────────────────────────────────
+
+class OAuthState(Base):
+    """Временное хранилище OAuth state для проверки callback."""
+    __tablename__ = "oauth_states"
+    
+    state = Column(String(200), primary_key=True, index=True)  # State токен
+    provider = Column(String(20), nullable=False)              # yandex, vk, google
+    role = Column(String(20), nullable=False)                  # advertiser, venue
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
+    
+    # Автоматическая очистка старых записей через 10 минут
+    # (можно добавить индекс на created_at и периодическую очистку)

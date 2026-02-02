@@ -7,7 +7,7 @@ from fastapi.responses import RedirectResponse
 
 from app.settings import settings
 from app.schemas import HealthResponse
-from app.db import init_db, SessionLocal
+from app.db import init_db, ensure_secondary_role_column, SessionLocal
 from app import models  # noqa: F401 - ensure models are imported
 from app.deps_auth import RedirectException
 
@@ -16,6 +16,7 @@ from app.deps_auth import RedirectException
 async def lifespan(app: FastAPI):
     # Startup: create tables and ensure admin exists
     init_db()
+    ensure_secondary_role_column()
     
     # Ensure admin user exists
     from app.services.auth_service import AuthService

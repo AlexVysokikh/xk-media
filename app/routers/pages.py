@@ -20,7 +20,7 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session, joinedload
 
 from app.deps import get_db
-from app.deps_auth import get_current_user_from_cookie, require_role_for_page
+from app.deps_auth import get_current_user_from_cookie, require_role_for_page, get_effective_view_role, get_role_context, COOKIE_CURRENT_ROLE_VIEW
 from app.models import (
     Payment, User, Role, TV, TVLink, PaymentStatus,
     VenueCategory, TargetAudience, Subscription, VenuePayout, TVStats,
@@ -41,13 +41,12 @@ templates = Jinja2Templates(directory="app/templates")
 async def landing(request: Request, user: User = Depends(get_current_user_from_cookie)):
     """Landing page."""
     if user:
-        if user.role == Role.ADMIN:
+        effective = get_effective_view_role(request, user)
+        if effective == Role.ADMIN:
             return RedirectResponse(url="/admin", status_code=303)
-        elif user.role == Role.VENUE:
+        if effective == Role.VENUE:
             return RedirectResponse(url="/venue", status_code=303)
-        else:
-            return RedirectResponse(url="/advertiser", status_code=303)
-    
+        return RedirectResponse(url="/advertiser", status_code=303)
     return templates.TemplateResponse("landing.html", {"request": request})
 
 
@@ -145,13 +144,12 @@ async def venue_request(
 async def login_page(request: Request, error: str = None, user: User = Depends(get_current_user_from_cookie)):
     """Login page."""
     if user:
-        if user.role == Role.ADMIN:
+        effective = get_effective_view_role(request, user)
+        if effective == Role.ADMIN:
             return RedirectResponse(url="/admin", status_code=303)
-        elif user.role == Role.VENUE:
+        if effective == Role.VENUE:
             return RedirectResponse(url="/venue", status_code=303)
-        else:
-            return RedirectResponse(url="/advertiser", status_code=303)
-    
+        return RedirectResponse(url="/advertiser", status_code=303)
     error_message = None
     if error == "invalid":
         error_message = "Неверный email или пароль"
@@ -161,45 +159,33 @@ async def login_page(request: Request, error: str = None, user: User = Depends(g
 
 @router.get("/choose-role", response_class=HTMLResponse)
 async def choose_role_page(request: Request, error: str = None, user: User = Depends(get_current_user_from_cookie)):
-    """Page for choosing user role after registration/login."""
+    """Роль выбирается только при регистрации. Залогиненных перенаправляем в ЛК."""
     if not user:
         return RedirectResponse(url="/login", status_code=303)
-    
-    # Если роль уже выбрана и это не первый вход, можно пропустить выбор
-    # Но для универсальности всегда показываем выбор
-    error_message = None
-    if error:
-        error_message = "Ошибка при выборе роли. Попробуйте еще раз."
-    
-    return templates.TemplateResponse("choose_role.html", {
-        "request": request,
-        "user": user,
-        "error": error_message
-    })
+    effective = get_effective_view_role(request, user)
+    if effective == Role.ADMIN:
+        return RedirectResponse(url="/admin", status_code=303)
+    if effective == Role.VENUE:
+        return RedirectResponse(url="/venue", status_code=303)
+    return RedirectResponse(url="/advertiser", status_code=303)
 
 
 @router.post("/choose-role", response_class=HTMLResponse)
 async def choose_role_save(
     request: Request,
-    role: str = Form(...),
+    role: str = Form(None),
     user: User = Depends(get_current_user_from_cookie),
     db: Session = Depends(get_db),
 ):
-    """Save selected role and redirect to appropriate dashboard."""
+    """Роль задаётся только при регистрации. Просто редирект в ЛК по текущей роли."""
     if not user:
         return RedirectResponse(url="/login", status_code=303)
-    
-    # Validate role
-    if role not in [Role.ADVERTISER, Role.VENUE]:
-        return RedirectResponse(url="/choose-role?error=invalid", status_code=303)
-    
-    # Update user role
-    user.role = role
-    db.commit()
-    
-    # Redirect based on selected role
-    redirect_url = "/venue" if role == Role.VENUE else "/advertiser"
-    return RedirectResponse(url=redirect_url, status_code=303)
+    effective = get_effective_view_role(request, user)
+    if effective == Role.ADMIN:
+        return RedirectResponse(url="/admin", status_code=303)
+    if effective == Role.VENUE:
+        return RedirectResponse(url="/venue", status_code=303)
+    return RedirectResponse(url="/advertiser", status_code=303)
 
 
 @router.post("/switch-role", response_class=HTMLResponse)
@@ -209,39 +195,32 @@ async def switch_role(
     user: User = Depends(get_current_user_from_cookie),
     db: Session = Depends(get_db),
 ):
-    """Switch user role and redirect to appropriate dashboard."""
+    """Переключение вида ЛК только у пользователей с двумя ролями (рекламодатель + площадка). Роль в БД не меняется."""
     if not user:
         return RedirectResponse(url="/login", status_code=303)
-    
-    # Admin cannot switch roles
-    if user.role == Role.ADMIN:
-        return RedirectResponse(url="/admin", status_code=303)
-    
-    # Validate role
+    if user.role == Role.ADMIN or not user.has_dual_roles():
+        effective = get_effective_view_role(request, user)
+        redirect_url = "/admin" if effective == Role.ADMIN else ("/venue" if effective == Role.VENUE else "/advertiser")
+        return RedirectResponse(url=redirect_url, status_code=303)
     if role not in [Role.ADVERTISER, Role.VENUE]:
-        # Redirect back to current dashboard
-        redirect_url = "/venue" if user.role == Role.VENUE else "/advertiser"
+        redirect_url = "/venue" if get_effective_view_role(request, user) == Role.VENUE else "/advertiser"
         return RedirectResponse(url=redirect_url, status_code=303)
-    
-    # Don't switch if already in that role
-    if user.role == role:
-        redirect_url = "/venue" if role == Role.VENUE else "/advertiser"
-        return RedirectResponse(url=redirect_url, status_code=303)
-    
-    # Update user role
-    user.role = role
-    db.commit()
-    
-    # Redirect based on selected role
     redirect_url = "/venue" if role == Role.VENUE else "/advertiser"
-    return RedirectResponse(url=redirect_url, status_code=303)
+    resp = RedirectResponse(url=redirect_url, status_code=303)
+    resp.set_cookie(key=COOKIE_CURRENT_ROLE_VIEW, value=role, max_age=60 * 60 * 24 * 365, samesite="lax")
+    return resp
 
 
 @router.get("/register", response_class=HTMLResponse)
 async def register_page(request: Request, role: str = "advertiser", error: str = None, user: User = Depends(get_current_user_from_cookie), db: Session = Depends(get_db)):
-    """Registration page."""
+    """Registration page. Роль выбирается только здесь, один раз."""
     if user:
-        return RedirectResponse(url="/choose-role", status_code=303)
+        effective = get_effective_view_role(request, user)
+        if effective == Role.ADMIN:
+            return RedirectResponse(url="/admin", status_code=303)
+        if effective == Role.VENUE:
+            return RedirectResponse(url="/venue", status_code=303)
+        return RedirectResponse(url="/advertiser", status_code=303)
     
     error_message = None
     if error == "passwords":
@@ -417,7 +396,8 @@ async def advertiser_dashboard(request: Request, user: User = Depends(require_ro
     
     return templates.TemplateResponse("advertiser_dashboard.html", {
         "request": request, "user": user, "stats": stats,
-        "payments": payments, "campaigns": campaigns, "subscriptions": subscriptions
+        "payments": payments, "campaigns": campaigns, "subscriptions": subscriptions,
+        **get_role_context(request, user)
     })
 
 
@@ -662,7 +642,8 @@ async def advertiser_stats(request: Request, period: str = None, date_from: str 
     return templates.TemplateResponse("advertiser_stats.html", {
         "request": request, "user": user, "campaigns": campaigns, "all_campaigns": all_campaigns,
         "stats": stats, "daily_stats": daily_stats, "period": period,
-        "date_from": date_from_val, "date_to": date_to_val, "selected_tv_id": selected_tv_id
+        "date_from": date_from_val, "date_to": date_to_val, "selected_tv_id": selected_tv_id,
+        **get_role_context(request, user)
     })
 
 
@@ -884,7 +865,8 @@ async def advertiser_campaigns(request: Request, user: User = Depends(require_ro
     }
     
     return templates.TemplateResponse("advertiser_campaigns.html", {
-        "request": request, "user": user, "campaigns": campaigns, "stats": stats
+        "request": request, "user": user, "campaigns": campaigns, "stats": stats,
+        **get_role_context(request, user)
     })
 
 
@@ -897,7 +879,7 @@ async def advertiser_profile(request: Request, success: str = None, user: User =
     elif success == "password":
         success_message = "Пароль изменён"
     
-    return templates.TemplateResponse("advertiser_profile.html", {"request": request, "user": user, "success": success_message})
+    return templates.TemplateResponse("advertiser_profile.html", {"request": request, "user": user, "success": success_message, **get_role_context(request, user)})
 
 
 @router.post("/advertiser/profile", response_class=HTMLResponse)
@@ -996,7 +978,8 @@ async def venue_dashboard(request: Request, user: User = Depends(require_role_fo
     }
     
     return templates.TemplateResponse("venue_dashboard.html", {
-        "request": request, "user": user, "stats": stats, "tvs": tvs, "recent_payouts": recent_payouts
+        "request": request, "user": user, "stats": stats, "tvs": tvs, "recent_payouts": recent_payouts,
+        **get_role_context(request, user)
     })
 
 
@@ -1029,7 +1012,8 @@ async def venue_tvs_list(request: Request, success: str = None, error: str = Non
         "request": request, "user": user, "tvs": tvs,
         "categories": VenueCategory.CHOICES, "audiences": TargetAudience.CHOICES,
         "equipment_types": EquipmentType.CHOICES,
-        "success": success_message, "error": error_message
+        "success": success_message, "error": error_message,
+        **get_role_context(request, user)
     })
 
 
@@ -1039,7 +1023,8 @@ async def venue_tv_add_page(request: Request, user: User = Depends(require_role_
     return templates.TemplateResponse("venue_tv_add.html", {
         "request": request, "user": user,
         "categories": VenueCategory.CHOICES, "audiences": TargetAudience.CHOICES,
-        "equipment_types": EquipmentType.CHOICES
+        "equipment_types": EquipmentType.CHOICES,
+        **get_role_context(request, user)
     })
 
 
@@ -1130,7 +1115,8 @@ async def venue_tv_detail(request: Request, tv_id: int, user: User = Depends(req
         "active_subs_count": len(active_subs),
         "total_impressions": total_impressions, "total_clicks": total_clicks,
         "categories": VenueCategory.CHOICES, "audiences": TargetAudience.CHOICES,
-        "equipment_types": EquipmentType.CHOICES
+        "equipment_types": EquipmentType.CHOICES,
+        **get_role_context(request, user)
     })
 
 
@@ -1232,7 +1218,8 @@ async def venue_advertisers(request: Request, tv_id: int = None, user: User = De
         "links": links, "advertiser_data": advertiser_data.values(),
         "total_revenue": f"{total_revenue:.0f}",
         "total_venue_share": f"{total_venue_share:.0f}",
-        "selected_tv_id": tv_id
+        "selected_tv_id": tv_id,
+        **get_role_context(request, user)
     })
 
 
@@ -1287,7 +1274,8 @@ async def venue_earnings(request: Request, period: str = None, user: User = Depe
         "pending_payouts": pending_payouts,
         "completed_payouts": completed_payouts[:10],
         "monthly_breakdown": monthly_breakdown,
-        "tvs": tvs
+        "tvs": tvs,
+        **get_role_context(request, user)
     })
 
 
@@ -1308,7 +1296,8 @@ async def venue_documents(request: Request, user: User = Depends(require_role_fo
         "request": request, "user": user, "documents": documents,
         "payouts": payouts, "pending_docs": pending_docs, "signed_docs": signed_docs,
         "total_amount": f"{total_amount:.0f}",
-        "document_types": DocumentType.CHOICES
+        "document_types": DocumentType.CHOICES,
+        **get_role_context(request, user)
     })
 
 
@@ -1365,7 +1354,8 @@ async def venue_profile(request: Request, success: str = None, user: User = Depe
         success_message = "✓ Пароль изменён"
     
     return templates.TemplateResponse("venue_profile.html", {
-        "request": request, "user": user, "tvs": tvs, "success": success_message
+        "request": request, "user": user, "tvs": tvs, "success": success_message,
+        **get_role_context(request, user)
     })
 
 
@@ -1473,6 +1463,15 @@ async def admin_user_update(request: Request, user_id: int, user: User = Depends
     target_user.last_name = form.get("last_name") or None
     target_user.phone = form.get("phone") or None
     target_user.role = form.get("role", target_user.role)
+    # Вторая роль: только для не-админов, значение должно отличаться от основной
+    if target_user.role != Role.ADMIN:
+        sec = (form.get("secondary_role") or "").strip() or None
+        if sec in (Role.ADVERTISER, Role.VENUE) and sec != target_user.role:
+            target_user.secondary_role = sec
+        else:
+            target_user.secondary_role = None
+    else:
+        target_user.secondary_role = None
     target_user.is_verified = "is_verified" in form
     db.commit()
     

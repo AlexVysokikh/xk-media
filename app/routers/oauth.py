@@ -3,13 +3,13 @@ OAuth routes для регистрации и входа через Yandex.
 """
 
 import secrets
-from datetime import datetime
+from datetime import datetime, timedelta
 from fastapi import APIRouter, Depends, Request, HTTPException, Query, BackgroundTasks
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
 from app.deps import get_db
-from app.models import User, Role, SiteSettings
+from app.models import User, Role, SiteSettings, OAuthState
 from app.services.auth_service import AuthService
 from app.services.oauth_service import OAuthService
 from app.security import create_access_token
@@ -19,29 +19,27 @@ router = APIRouter(prefix="/auth/oauth", tags=["OAuth"])
 
 COOKIE_NAME = "access_token"
 
-# Хранилище state для проверки (в продакшене использовать Redis)
-oauth_states = {}
-
 
 def set_cookie_and_redirect(response: RedirectResponse, user: User, role: str):
-    """Установить cookie и перенаправить пользователя."""
+    """Установить cookie и перенаправить пользователя в ЛК (без выбора роли)."""
     token = create_access_token(data={"sub": str(user.id), "role": user.role})
     
-    # Для админа сразу в админку, для остальных - выбор роли
     if user.role == Role.ADMIN:
         redirect_url = "/admin"
+    elif user.role == Role.VENUE:
+        redirect_url = "/venue"
     else:
-        redirect_url = "/choose-role"
+        redirect_url = "/advertiser"
     
-    response.url = redirect_url
-    response.set_cookie(
+    new_response = RedirectResponse(url=redirect_url, status_code=303)
+    new_response.set_cookie(
         key=COOKIE_NAME,
         value=token,
         httponly=True,
         max_age=60 * 60 * 24 * 7,  # 7 days
         samesite="lax",
     )
-    return response
+    return new_response
 
 
 # ─────────────────────────────────────────────────────────────
@@ -49,7 +47,10 @@ def set_cookie_and_redirect(response: RedirectResponse, user: User, role: str):
 # ─────────────────────────────────────────────────────────────
 
 @router.get("/yandex")
-async def yandex_oauth_start(role: str = Query("advertiser", description="Роль: advertiser или venue")):
+async def yandex_oauth_start(
+    role: str = Query("advertiser", description="Роль: advertiser или venue"),
+    db: Session = Depends(get_db)
+):
     """Начать OAuth авторизацию через Yandex."""
     if not settings.YANDEX_CLIENT_ID:
         return RedirectResponse(url="/login?error=oauth_not_configured", status_code=303)
@@ -58,13 +59,26 @@ async def yandex_oauth_start(role: str = Query("advertiser", description="Рол
         role = Role.ADVERTISER
     
     try:
+        # Очищаем старые state (старше 10 минут)
+        cutoff_time = datetime.utcnow() - timedelta(minutes=10)
+        db.query(OAuthState).filter(OAuthState.created_at < cutoff_time).delete()
+        db.commit()
+        
         state = OAuthService.generate_state()
-        oauth_states[state] = {"role": role, "provider": "yandex"}
+        # Сохраняем state в базу данных вместо памяти
+        oauth_state = OAuthState(
+            state=state,
+            provider="yandex",
+            role=role
+        )
+        db.add(oauth_state)
+        db.commit()
         
         auth_url = OAuthService.get_yandex_auth_url(state, role)
         return RedirectResponse(url=auth_url)
     except Exception as e:
         print(f"Yandex OAuth start error: {e}")
+        db.rollback()
         return RedirectResponse(url="/login?error=oauth_config_error", status_code=303)
 
 
@@ -89,12 +103,25 @@ async def yandex_oauth_callback(
         print(f"Yandex OAuth callback missing parameters: code={code}, state={state}")
         return RedirectResponse(url="/login?error=oauth_invalid", status_code=303)
     
-    if state not in oauth_states:
+    # Ищем state в базе данных вместо памяти
+    oauth_state = db.query(OAuthState).filter(OAuthState.state == state).first()
+    if not oauth_state:
         print(f"Yandex OAuth invalid state: {state}")
         return RedirectResponse(url="/login?error=oauth_invalid", status_code=303)
     
-    state_data = oauth_states.pop(state)
-    role = state_data.get("role", Role.ADVERTISER)
+    # Проверяем, не истек ли state (старше 10 минут)
+    if datetime.utcnow() - oauth_state.created_at > timedelta(minutes=10):
+        db.delete(oauth_state)
+        db.commit()
+        print(f"Yandex OAuth expired state: {state}")
+        return RedirectResponse(url="/login?error=oauth_invalid", status_code=303)
+    
+    role = oauth_state.role
+    provider = oauth_state.provider
+    
+    # Удаляем использованный state
+    db.delete(oauth_state)
+    db.commit()
     
     try:
         token_data = await OAuthService.get_yandex_token(code)
@@ -151,20 +178,23 @@ async def yandex_oauth_callback(
         offer = db.query(SiteSettings).filter(SiteSettings.key == "offer", SiteSettings.is_active == True).first()
         offer_version = offer.version if offer else "1.0"
         
-        user = auth.create_user(
-            email=email,
-            password=random_password,
-            role=role,
-            first_name=first_name,
-            last_name=last_name,
-        )
-        user.oauth_provider = "yandex"
-        user.oauth_provider_id = provider_id
-        user.oauth_email = email
-        user.offer_accepted_at = datetime.utcnow()
-        user.offer_version = offer_version
-        user.is_verified = True
-        db.commit()
+        try:
+            user = auth.create_user(
+                email=email,
+                password=random_password,
+                role=role,
+                first_name=first_name,
+                last_name=last_name,
+            )
+            user.oauth_provider = "yandex"
+            user.oauth_provider_id = provider_id
+            user.oauth_email = email
+            user.offer_accepted_at = datetime.utcnow()
+            user.offer_version = offer_version
+            user.is_verified = True
+            db.commit()
+        except Exception as e:
+            raise
         
         # Отправляем уведомление о новом пользователе (в фоне)
         if background_tasks:
@@ -181,7 +211,8 @@ async def yandex_oauth_callback(
             except Exception as e:
                 print(f"Error scheduling new user notification: {e}")
     
-    redirect = RedirectResponse(url="/", status_code=303)
-    return set_cookie_and_redirect(redirect, user, user.role)
+    # Создаем временный redirect для передачи в функцию
+    temp_redirect = RedirectResponse(url="/", status_code=303)
+    return set_cookie_and_redirect(temp_redirect, user, user.role)
 
 

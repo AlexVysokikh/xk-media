@@ -18,6 +18,7 @@ from app.models import User, Role
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login", auto_error=False)
 
 COOKIE_NAME = "access_token"
+COOKIE_CURRENT_ROLE_VIEW = "current_role_view"  # для пользователей с двумя ролями: advertiser | venue
 
 
 # ─────────────────────────────────────────────────────────────
@@ -136,6 +137,29 @@ async def require_auth_for_page(
     return user
 
 
+def get_effective_view_role(request: Request, user: User) -> str:
+    """
+    Текущая «видимая» роль для редиректов и отображения ЛК.
+    У пользователей с двумя ролями берётся из cookie current_role_view, иначе — user.role.
+    """
+    if user.role == Role.ADMIN:
+        return Role.ADMIN
+    if user.has_dual_roles():
+        view = request.cookies.get(COOKIE_CURRENT_ROLE_VIEW)
+        if view in (Role.ADVERTISER, Role.VENUE):
+            return view
+        return user.role
+    return user.role
+
+
+def get_role_context(request: Request, user: User) -> dict:
+    """Контекст для шаблонов: current_role, has_dual_roles (переключатель показывать только при двух ролях)."""
+    return {
+        "current_role": get_effective_view_role(request, user),
+        "has_dual_roles": user.has_dual_roles(),
+    }
+
+
 def require_role_for_page(role: str) -> Callable:
     """
     Browser Dependency factory - requires specific role for page.
@@ -153,12 +177,20 @@ def require_role_for_page(role: str) -> Callable:
             # Not logged in - redirect to login
             raise RedirectException("/login")
         
-        if user.role != role:
-            # Wrong role - redirect to their dashboard
+        # Доступ: по основной или второй роли (кроме админа — только основная)
+        has_role = False
+        if role == Role.ADMIN:
+            has_role = user.role == Role.ADMIN
+        elif role == Role.ADVERTISER:
+            has_role = user.has_advertiser_role()
+        elif role == Role.VENUE:
+            has_role = user.has_venue_role()
+        if not has_role:
+            effective = get_effective_view_role(request, user)
             redirect_url = "/advertiser"
-            if user.role == Role.ADMIN:
+            if effective == Role.ADMIN:
                 redirect_url = "/admin"
-            elif user.role == Role.VENUE:
+            elif effective == Role.VENUE:
                 redirect_url = "/venue"
             raise RedirectException(redirect_url)
         

@@ -76,6 +76,20 @@
                     <option value="admin" {% if target_user.role == 'admin' %}selected{% endif %}>Администратор</option>
                 </select>
             </div>
+            {% if target_user.role != 'admin' %}
+            <div class="form-group">
+                <label class="form-label">Вторая роль (двойная: рекламодатель + площадка)</label>
+                <select name="secondary_role" class="form-input">
+                    <option value="">Нет (только одна роль)</option>
+                    {% if target_user.role == 'advertiser' %}
+                    <option value="venue" {% if target_user.secondary_role == 'venue' %}selected{% endif %}>Площадка</option>
+                    {% else %}
+                    <option value="advertiser" {% if target_user.secondary_role == 'advertiser' %}selected{% endif %}>Рекламодатель</option>
+                    {% endif %}
+                </select>
+                <small style="color: var(--text-muted);">Если задана вторая роль — у пользователя в ЛК появится переключатель между кабинетами.</small>
+            </div>
+            {% endif %}
             <div class="form-group">
                 <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
                     <input type="checkbox" name="is_verified" {% if target_user.is_verified %}checked{% endif %}>

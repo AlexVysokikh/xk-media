@@ -14,10 +14,7 @@
 <a href="/venue/tvs" class="active">Мои ТВ</a>
 <a href="/venue/earnings">Доходы</a>
 <a href="/venue/profile">Профиль</a>
-<form method="POST" action="/switch-role" style="display: inline-block; margin: 0;">
-    <input type="hidden" name="role" value="advertiser">
-    <button type="submit" class="btn btn-secondary btn-sm" style="background: rgba(0, 212, 255, 0.2); border-color: var(--accent); color: var(--accent);" title="Переключиться в кабинет рекламодателя">🎯 Рекламодатель</button>
-</form>
+{% if has_dual_roles %}{{ role_switcher(current_role) }}{% endif %}
 <a href="/logout" class="btn btn-secondary btn-sm">Выйти</a>
 {% endblock %}
 
