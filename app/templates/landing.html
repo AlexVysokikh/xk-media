@@ -517,10 +517,215 @@
             left: 50%;
         }
 
-        .examples-grid {
+    .examples-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    /* Кейсы indoor рекламы */
+    .cases-section {
+        margin-bottom: 6rem;
+    }
+    
+    .cases-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 2rem;
+        margin-top: 3rem;
+    }
+    
+    .case-card {
+        background: white;
+        border-radius: 16px;
+        padding: 2rem;
+        border: 1px solid var(--border);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s;
+        cursor: pointer;
+    }
+    
+    .case-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+        border-color: var(--accent);
+    }
+    
+    .case-card h3 {
+        color: var(--accent);
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+        font-weight: 700;
+    }
+    
+    .case-card .case-preview {
+        color: var(--text-muted);
+        font-size: 1rem;
+        line-height: 1.7;
+        margin-bottom: 1rem;
+    }
+    
+    .case-card .case-link {
+        color: var(--accent);
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .case-card .case-link:hover {
+        text-decoration: underline;
+    }
+    
+    /* Модальное окно для кейсов */
+    .case-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 3000;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+        overflow-y: auto;
+        box-sizing: border-box;
+    }
+    
+    .case-modal.active {
+        display: flex;
+    }
+    
+    .case-modal-content {
+        background: white;
+        border-radius: 16px;
+        max-width: 800px;
+        width: 100%;
+        max-height: calc(100vh - 2rem);
+        overflow-y: auto;
+        position: relative;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+    
+    .case-modal-header {
+        padding: 2rem 2rem 1rem;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: sticky;
+        top: 0;
+        background: white;
+        z-index: 10;
+        border-radius: 16px 16px 0 0;
+    }
+    
+    .case-modal-header h2 {
+        font-size: 1.75rem;
+        color: var(--accent);
+        margin: 0;
+        font-weight: 700;
+    }
+    
+    .case-modal-close {
+        background: none;
+        border: none;
+        font-size: 2rem;
+        cursor: pointer;
+        color: var(--text-muted);
+        padding: 0;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        transition: all 0.2s;
+    }
+    
+    .case-modal-close:hover {
+        background: var(--secondary);
+        color: var(--text);
+    }
+    
+    .case-modal-body {
+        padding: 2rem;
+    }
+    
+    .case-modal-body h3 {
+        font-size: 1.5rem;
+        color: var(--text);
+        margin-top: 1.5rem;
+        margin-bottom: 1rem;
+        font-weight: 700;
+    }
+    
+    .case-modal-body h3:first-child {
+        margin-top: 0;
+    }
+    
+    .case-modal-body p {
+        color: var(--text-muted);
+        font-size: 1rem;
+        line-height: 1.8;
+        margin-bottom: 1rem;
+    }
+    
+    .case-modal-body ul {
+        color: var(--text-muted);
+        font-size: 1rem;
+        line-height: 1.8;
+        margin-bottom: 1rem;
+        padding-left: 1.5rem;
+    }
+    
+    .case-modal-body li {
+        margin-bottom: 0.5rem;
+    }
+    
+    .case-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 1rem;
+        margin: 2rem 0;
+        padding: 1.5rem;
+        background: linear-gradient(135deg, rgba(37, 99, 235, 0.05), rgba(59, 130, 246, 0.05));
+        border-radius: 12px;
+    }
+    
+    .case-stat-item {
+        text-align: center;
+    }
+    
+    .case-stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--accent);
+        display: block;
+        margin-bottom: 0.25rem;
+    }
+    
+    .case-stat-label {
+        font-size: 0.9rem;
+        color: var(--text-muted);
+    }
+    
+    @media (max-width: 768px) {
+        .cases-grid {
             grid-template-columns: 1fr;
         }
+        
+        .case-modal-content {
+            max-height: calc(100vh - 1rem);
+        }
+        
+        .case-modal-header,
+        .case-modal-body {
+            padding: 1.5rem;
+        }
     }
+}
 </style>
 {% endblock %}
 
@@ -580,105 +785,224 @@
     </div>
 </div>
 
-<!-- Примеры данных -->
-<div class="examples-section">
-    <h2 class="section-title">Реальные результаты наших клиентов</h2>
-    <p class="section-subtitle">Посмотрите, каких показателей достигают рекламодатели и площадки</p>
+
+<!-- Кейсы indoor рекламы -->
+<div class="cases-section">
+    <h2 class="section-title">Кейсы indoor рекламы</h2>
+    <p class="section-subtitle">Реальные истории успеха наших клиентов с использованием indoor рекламы</p>
     
-    <div class="examples-grid">
-        <div class="example-card">
-            <h3>📊 Рекламодатель</h3>
-            <div class="example-stats">
-                <div class="stat-item">
-                    <span class="stat-label">Активных ТВ</span>
-                    <span class="stat-value">4</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">Показов</span>
-                    <span class="stat-value">171,900</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">Переходов</span>
-                    <span class="stat-value">7,112</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">Конверсия</span>
-                    <span class="stat-value">4.14%</span>
-                </div>
-            </div>
+    <div class="cases-grid">
+        <div class="case-card" onclick="openCaseModal('case1')">
+            <h3>☕ Кофейня увеличила поток клиентов на 40%</h3>
+            <p class="case-preview">
+                Как небольшая кофейня в центре Москвы использовала indoor рекламу на ТВ-экранах 
+                для привлечения новых посетителей и увеличила поток клиентов на 40% за 3 месяца.
+            </p>
+            <a href="#" class="case-link" onclick="event.preventDefault(); openCaseModal('case1')">
+                Читать кейс →
+            </a>
         </div>
         
-        <div class="example-card">
-            <h3>🏢 Площадка</h3>
-            <div class="example-stats">
-                <div class="stat-item">
-                    <span class="stat-label">ТВ-экранов</span>
-                    <span class="stat-value">4</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">Рекламодателей</span>
-                    <span class="stat-value">16</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">Всего заработано</span>
-                    <span class="stat-value">115,500 ₽</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">К выплате</span>
-                    <span class="stat-value">66,500 ₽</span>
-                </div>
-            </div>
+        <div class="case-card" onclick="openCaseModal('case2')">
+            <h3>💇 Салон красоты: рост онлайн-записей в 2.5 раза</h3>
+            <p class="case-preview">
+                Салон красоты использовал indoor рекламу в фитнес-клубах и бизнес-центрах 
+                для продвижения услуг. Результат: рост онлайн-записей в 2.5 раза и увеличение 
+                среднего чека на 25%.
+            </p>
+            <a href="#" class="case-link" onclick="event.preventDefault(); openCaseModal('case2')">
+                Читать кейс →
+            </a>
         </div>
         
-        <div class="example-card">
-            <h3>📈 Эффективность</h3>
-            <div class="example-stats">
-                <div class="stat-item">
-                    <span class="stat-label">Средняя конверсия</span>
-                    <span class="stat-value">4.14%</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">Средний CTR</span>
-                    <span class="stat-value">4.14%</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">Активных кампаний</span>
-                    <span class="stat-value">12</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">Площадок</span>
-                    <span class="stat-value">15+</span>
-                </div>
-            </div>
+        <div class="case-card" onclick="openCaseModal('case3')">
+            <h3>🚗 Автосервис: привлечение клиентов из района</h3>
+            <p class="case-preview">
+                Автосервис запустил кампанию на ТВ-экранах в кофейнях и салонах красоты 
+                своего района. За 2 месяца привлекли 120 новых клиентов с конверсией 6.2%.
+            </p>
+            <a href="#" class="case-link" onclick="event.preventDefault(); openCaseModal('case3')">
+                Читать кейс →
+            </a>
         </div>
     </div>
-    
-    <!-- Пример точки -->
-    <div class="venue-example">
-        <div class="venue-example-header">
-            <div class="venue-example-icon">☕</div>
-            <div class="venue-example-info">
-                <h4>Кофейня «Уютная»</h4>
-                <p>Москва, ул. Тверская, д. 10, стр. 1</p>
-            </div>
+</div>
+
+<!-- Модальные окна для кейсов -->
+<div id="case1" class="case-modal" onclick="if(event.target===this) closeCaseModal('case1')">
+    <div class="case-modal-content" onclick="event.stopPropagation()">
+        <div class="case-modal-header">
+            <h2>☕ Кофейня увеличила поток клиентов на 40%</h2>
+            <button class="case-modal-close" onclick="closeCaseModal('case1')" aria-label="Закрыть">&times;</button>
         </div>
-        <div class="example-stats">
-            <div class="stat-item">
-                <span class="stat-label">ТВ-экранов</span>
-                <span class="stat-value">4</span>
+        <div class="case-modal-body">
+            <h3>Задача</h3>
+            <p>
+                Небольшая кофейня в центре Москвы столкнулась с проблемой низкой проходимости. 
+                Несмотря на качественный кофе и уютную атмосферу, поток клиентов был недостаточным. 
+                Владельцы хотели привлечь новых посетителей из близлежащих офисов и жилых домов.
+            </p>
+            
+            <h3>Решение</h3>
+            <p>
+                Кофейня запустила indoor рекламную кампанию на платформе ХК Медиа. Реклама размещалась 
+                на ТВ-экранах в близлежащих бизнес-центрах, фитнес-клубах и салонах красоты. 
+                В рекламе использовался QR-код для быстрого перехода на страницу с акциями и меню.
+            </p>
+            
+            <h3>Результаты</h3>
+            <div class="case-stats">
+                <div class="case-stat-item">
+                    <span class="case-stat-value">+40%</span>
+                    <span class="case-stat-label">Рост потока клиентов</span>
+                </div>
+                <div class="case-stat-item">
+                    <span class="case-stat-value">15,200</span>
+                    <span class="case-stat-label">Показов рекламы</span>
+                </div>
+                <div class="case-stat-item">
+                    <span class="case-stat-value">892</span>
+                    <span class="case-stat-label">Переходов по QR-коду</span>
+                </div>
+                <div class="case-stat-item">
+                    <span class="case-stat-value">5.9%</span>
+                    <span class="case-stat-label">Конверсия</span>
+                </div>
             </div>
-            <div class="stat-item">
-                <span class="stat-label">Рекламодателей</span>
-                <span class="stat-value">16</span>
+            
+            <p>
+                За 3 месяца кампании кофейня увеличила поток клиентов на 40%. Особенно эффективной 
+                оказалась реклама в бизнес-центрах в обеденное время — многие офисные работники 
+                стали постоянными клиентами. Средний чек вырос на 15% благодаря акциям, 
+                которые клиенты видели в рекламе.
+            </p>
+            
+            <h3>Ключевые факторы успеха</h3>
+            <ul>
+                <li>Гиперлокальный таргетинг — реклама показывалась только в радиусе 500 метров от кофейни</li>
+                <li>Правильный выбор площадок — бизнес-центры и фитнес-клубы с высокой проходимостью</li>
+                <li>Привлекательные акции — скидки на обеденные комплексы и кофе навынос</li>
+                <li>Простота перехода — QR-код позволял сразу перейти к меню и акциям</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<div id="case2" class="case-modal" onclick="if(event.target===this) closeCaseModal('case2')">
+    <div class="case-modal-content" onclick="event.stopPropagation()">
+        <div class="case-modal-header">
+            <h2>💇 Салон красоты: рост онлайн-записей в 2.5 раза</h2>
+            <button class="case-modal-close" onclick="closeCaseModal('case2')" aria-label="Закрыть">&times;</button>
+        </div>
+        <div class="case-modal-body">
+            <h3>Задача</h3>
+            <p>
+                Салон красоты хотел увеличить количество онлайн-записей и привлечь новых клиентов. 
+                Традиционная реклама в соцсетях давала низкую конверсию, а бюджет был ограничен. 
+                Нужно было найти эффективный способ продвижения услуг.
+            </p>
+            
+            <h3>Решение</h3>
+            <p>
+                Салон запустил indoor рекламную кампанию на ТВ-экранах в фитнес-клубах и бизнес-центрах. 
+                Реклама показывала услуги стрижки, окрашивания и маникюра с призывом записаться онлайн. 
+                QR-код вел прямо на страницу онлайн-записи с бонусом для новых клиентов.
+            </p>
+            
+            <h3>Результаты</h3>
+            <div class="case-stats">
+                <div class="case-stat-item">
+                    <span class="case-stat-value">2.5x</span>
+                    <span class="case-stat-label">Рост онлайн-записей</span>
+                </div>
+                <div class="case-stat-item">
+                    <span class="case-stat-value">28,500</span>
+                    <span class="case-stat-label">Показов рекламы</span>
+                </div>
+                <div class="case-stat-item">
+                    <span class="case-stat-value">1,710</span>
+                    <span class="case-stat-label">Переходов на сайт</span>
+                </div>
+                <div class="case-stat-item">
+                    <span class="case-stat-value">+25%</span>
+                    <span class="case-stat-label">Рост среднего чека</span>
+                </div>
             </div>
-            <div class="stat-item">
-                <span class="stat-label">Показов рекламы</span>
-                <span class="stat-value">171,900</span>
+            
+            <p>
+                За 4 месяца кампании количество онлайн-записей выросло в 2.5 раза. Особенно эффективной 
+                оказалась реклама в фитнес-клубах — клиенты, которые заботились о здоровье и спорте, 
+                также интересовались услугами красоты. Средний чек увеличился на 25% благодаря 
+                перекрестным продажам услуг.
+            </p>
+            
+            <h3>Ключевые факторы успеха</h3>
+            <ul>
+                <li>Таргетинг на целевую аудиторию — фитнес-клубы и бизнес-центры с женской аудиторией</li>
+                <li>Привлекательное визуальное оформление — качественные фото работ мастера</li>
+                <li>Бонус для новых клиентов — скидка 15% при первой записи через QR-код</li>
+                <li>Удобная онлайн-запись — быстрый переход к календарю записи</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<div id="case3" class="case-modal" onclick="if(event.target===this) closeCaseModal('case3')">
+    <div class="case-modal-content" onclick="event.stopPropagation()">
+        <div class="case-modal-header">
+            <h2>🚗 Автосервис: привлечение клиентов из района</h2>
+            <button class="case-modal-close" onclick="closeCaseModal('case3')" aria-label="Закрыть">&times;</button>
+        </div>
+        <div class="case-modal-body">
+            <h3>Задача</h3>
+            <p>
+                Автосервис хотел привлечь клиентов из своего района. Конкуренция была высокой, 
+                и традиционная реклама не давала нужного результата. Нужно было найти способ 
+                донести информацию о услугах до владельцев автомобилей в радиусе 2-3 км.
+            </p>
+            
+            <h3>Решение</h3>
+            <p>
+                Автосервис запустил indoor рекламную кампанию на ТВ-экранах в кофейнях, салонах красоты 
+                и бизнес-центрах своего района. Реклама показывала услуги по ремонту, ТО и шиномонтажу 
+                с призывом записаться на диагностику. QR-код вел на страницу с онлайн-записью и 
+                специальным предложением для новых клиентов.
+            </p>
+            
+            <h3>Результаты</h3>
+            <div class="case-stats">
+                <div class="case-stat-item">
+                    <span class="case-stat-value">120</span>
+                    <span class="case-stat-label">Новых клиентов</span>
+                </div>
+                <div class="case-stat-item">
+                    <span class="case-stat-value">22,800</span>
+                    <span class="case-stat-label">Показов рекламы</span>
+                </div>
+                <div class="case-stat-item">
+                    <span class="case-stat-value">1,413</span>
+                    <span class="case-stat-label">Переходов по QR-коду</span>
+                </div>
+                <div class="case-stat-item">
+                    <span class="case-stat-value">6.2%</span>
+                    <span class="case-stat-label">Конверсия</span>
+                </div>
             </div>
-            <div class="stat-item">
-                <span class="stat-label">Доход</span>
-                <span class="stat-value">115,500 ₽</span>
-            </div>
+            
+            <p>
+                За 2 месяца кампании автосервис привлек 120 новых клиентов. Особенно эффективной 
+                оказалась реклама в кофейнях в утренние часы — многие водители заезжали на кофе 
+                перед работой и видели рекламу автосервиса. Конверсия составила 6.2%, что выше 
+                среднего показателя по индустрии.
+            </p>
+            
+            <h3>Ключевые факторы успеха</h3>
+            <ul>
+                <li>Гиперлокальный таргетинг — реклама только в радиусе 2-3 км от автосервиса</li>
+                <li>Правильный выбор времени — утренние и обеденные часы в кофейнях</li>
+                <li>Привлекательное предложение — бесплатная диагностика для новых клиентов</li>
+                <li>Простота записи — QR-код вел прямо на онлайн-запись</li>
+            </ul>
         </div>
     </div>
 </div>
@@ -822,19 +1146,6 @@
     </div>
 </div>
 
-    <div class="venue-cta-section">
-    <div class="venue-cta-content">
-        <a href="/register?role=venue" class="venue-cta-button">
-            ХОЧУ ПОЛУЧАТЬ!
-        </a>
-        <p class="venue-cta-description">
-            <strong>Монетизируйте трафик вашего заведения</strong><br>
-            Установите ТВ-экран и получайте дополнительный доход от рекламы, которая показывается вашим посетителям. 
-            Станьте частью экосистемы, где локальные бизнесы помогают друг другу расти. 
-            Автоматические выплаты, прозрачная статистика и взаимовыгодное партнёрство.
-        </p>
-    </div>
-</div>
 
 <div class="how-it-works">
     <h2 class="section-title">Как начать?</h2>
@@ -913,6 +1224,34 @@ document.getElementById('advertiserForm').addEventListener('submit', async funct
     } finally {
         submitButton.disabled = false;
         submitButton.textContent = 'Отправить заявку';
+    }
+});
+
+// Функции для работы с модальными окнами кейсов
+function openCaseModal(caseId) {
+    const modal = document.getElementById(caseId);
+    if (modal) {
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+function closeCaseModal(caseId) {
+    const modal = document.getElementById(caseId);
+    if (modal) {
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+}
+
+// Закрытие по Escape
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        const activeModal = document.querySelector('.case-modal.active');
+        if (activeModal) {
+            activeModal.classList.remove('active');
+            document.body.style.overflow = '';
+        }
     }
 });
 </script>
