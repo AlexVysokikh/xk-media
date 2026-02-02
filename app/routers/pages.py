@@ -14,7 +14,8 @@ from pathlib import Path
 from datetime import datetime, date
 from decimal import Decimal
 
-from fastapi import APIRouter, Request, Depends, Form, UploadFile, File, BackgroundTasks
+from fastapi import APIRouter, Request, Depends, Form, UploadFile, File, BackgroundTasks, Query
+from typing import Optional
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session, joinedload
@@ -711,7 +712,7 @@ async def advertiser_create_payment_page(request: Request, user: User = Depends(
 
 
 @router.get("/advertiser/stats", response_class=HTMLResponse)
-async def advertiser_stats(request: Request, period: str = None, date_from: str = None, date_to: str = None, tv_id: int = None, user: User = Depends(require_role_for_page(Role.ADVERTISER)), db: Session = Depends(get_db)):
+async def advertiser_stats(request: Request, period: str = None, date_from: str = None, date_to: str = None, tv_id: Optional[int] = Query(default=None), user: User = Depends(require_role_for_page(Role.ADVERTISER)), db: Session = Depends(get_db)):
     """Advertiser stats with filters."""
     from datetime import timedelta
     
