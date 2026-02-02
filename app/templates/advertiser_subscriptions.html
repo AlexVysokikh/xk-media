@@ -34,14 +34,112 @@
     .stat-ots { font-weight: 600; color: var(--success); }
     .stat-clicks { font-weight: 600; color: var(--accent-tertiary); }
     @media (max-width: 900px) {
-        .stats-table { display: block; }
-        .stats-table thead { display: none; }
-        .stats-table tr { display: block; margin-bottom: 1rem; border: 1px solid var(--border); border-radius: 10px; padding: 1rem; }
-        .stats-table td { display: block; border: none; padding: 0.35rem 0; }
+        .stats-table { 
+            display: block; 
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .stats-table thead { 
+            display: none; 
+        }
+        
+        .stats-table tr { 
+            display: block; 
+            margin-bottom: 1rem; 
+            border: 1px solid var(--border); 
+            border-radius: 10px; 
+            padding: 1rem; 
+            background: var(--card-bg);
+        }
+        
+        .stats-table td { 
+            display: block; 
+            border: none; 
+            padding: 0.5rem 0; 
+            text-align: left;
+        }
+        
         .stats-table td::before {
             content: attr(data-label);
-            font-weight: 600; font-size: 0.75rem; color: var(--text-muted);
-            display: block; margin-bottom: 0.15rem;
+            font-weight: 600; 
+            font-size: 0.75rem; 
+            color: var(--text-muted);
+            display: block; 
+            margin-bottom: 0.25rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .campaign-name {
+            font-size: 1rem;
+            margin-bottom: 0.25rem;
+        }
+        
+        .tv-venue {
+            font-size: 0.8rem;
+        }
+        
+        .stat-num,
+        .stat-ots,
+        .stat-clicks {
+            font-size: 1.125rem;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        form[style*="display: flex"] {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        
+        form[style*="display: flex"] > div {
+            width: 100%;
+            min-width: 100%;
+        }
+        
+        form[style*="display: flex"] select,
+        form[style*="display: flex"] input {
+            font-size: 16px; /* Предотвращает зум на iOS */
+        }
+        
+        form[style*="display: flex"] .btn {
+            width: 100%;
+            margin-top: 0.5rem;
+        }
+        
+        /* Карточка ТВ-экрана */
+        .card[style*="background: linear-gradient"] {
+            padding: 1rem;
+        }
+        
+        .card[style*="background: linear-gradient"] > div[style*="display: grid"] {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+        
+        .card[style*="background: linear-gradient"] > div[style*="display: grid"] > div {
+            text-align: left;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .stats-table tr {
+            padding: 0.75rem;
+        }
+        
+        .stats-table td {
+            padding: 0.375rem 0;
+        }
+        
+        .campaign-name {
+            font-size: 0.95rem;
+        }
+        
+        .stat-num,
+        .stat-ots,
+        .stat-clicks {
+            font-size: 1rem;
         }
     }
 </style>
