@@ -235,55 +235,6 @@
     </div>
 </div>
 
-<!-- Загрузка ролика -->
-<div class="card" style="margin-top: 1.5rem;">
-    <div class="card-header">
-        <h3 class="card-title">🎬 Разместить ролик</h3>
-    </div>
-    <div class="card-content">
-        {% if request.query_params.get('success') == 'video_sent' %}
-        <div class="alert alert-success" style="margin-bottom: 1rem;">
-            ✅ Ролик успешно отправлен! Мы получили ваше сообщение и свяжемся с вами в ближайшее время.
-        </div>
-        {% elif request.query_params.get('error') == 'video_upload_failed' %}
-        <div class="alert alert-error" style="margin-bottom: 1rem;">
-            ❌ Ошибка при загрузке ролика. Попробуйте еще раз.
-        </div>
-        {% elif request.query_params.get('error') == 'video_too_large' %}
-        <div class="alert alert-error" style="margin-bottom: 1rem;">
-            ❌ Размер файла превышает 100 МБ. Пожалуйста, выберите файл меньшего размера.
-        </div>
-        {% elif request.query_params.get('error') == 'video_invalid_format' %}
-        <div class="alert alert-error" style="margin-bottom: 1rem;">
-            ❌ Неподдерживаемый формат файла. Используйте MP4, AVI, MOV, MKV или WEBM.
-        </div>
-        {% endif %}
-        
-        <form method="POST" action="/advertiser/upload-video" enctype="multipart/form-data" id="videoUploadForm">
-            <div class="form-group">
-                <label for="video_file" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">
-                    Выберите ролик *
-                </label>
-                <input type="file" id="video_file" name="video_file" accept="video/*" required style="width: 100%; padding: 0.75rem; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; color: var(--text);">
-                <span style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem; display: block;">
-                    Поддерживаемые форматы: MP4, AVI, MOV, MKV (макс. 100 МБ)
-                </span>
-            </div>
-            
-            <div class="form-group" style="margin-top: 1.5rem;">
-                <label for="comment" style="display: block; margin-bottom: 0.5rem; font-weight: 600;">
-                    Комментарий к ролику
-                </label>
-                <textarea id="comment" name="comment" rows="4" placeholder="Опишите ваш ролик, укажите желаемые даты размещения, площадки и другую важную информацию..." style="width: 100%; padding: 0.75rem; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: inherit; resize: vertical;"></textarea>
-            </div>
-            
-            <button type="submit" class="btn btn-primary" style="margin-top: 1rem; width: 100%;" id="submitBtn">
-                📧 Отправить ролик на content@xk-media.ru
-            </button>
-        </form>
-    </div>
-</div>
-
 <!-- Модальное окно: Создать рекламную кампанию (адаптивное) -->
 <div id="campaign-modal" onclick="if(event.target===this) this.style.display='none'">
     <div class="campaign-modal-inner card" onclick="event.stopPropagation()">
@@ -313,25 +264,4 @@
     </div>
 </div>
 
-<script>
-document.getElementById('videoUploadForm').addEventListener('submit', function(e) {
-    const submitBtn = document.getElementById('submitBtn');
-    const fileInput = document.getElementById('video_file');
-    
-    // Проверка размера файла (100 МБ)
-    if (fileInput.files.length > 0) {
-        const fileSize = fileInput.files[0].size;
-        const maxSize = 100 * 1024 * 1024; // 100 МБ
-        
-        if (fileSize > maxSize) {
-            e.preventDefault();
-            alert('Размер файла превышает 100 МБ. Пожалуйста, выберите файл меньшего размера.');
-            return false;
-        }
-    }
-    
-    submitBtn.disabled = true;
-    submitBtn.textContent = '⏳ Отправка...';
-});
-</script>
 {% endblock %}
