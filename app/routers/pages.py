@@ -969,18 +969,51 @@ async def advertiser_stats(request: Request, period: str = None, date_from: str 
     date_from_val = date_from or (today - timedelta(days=30)).strftime("%Y-%m-%d")
     date_to_val = date_to or today.strftime("%Y-%m-%d")
     
+    # Загружаем данные о выбранном ТВ для карточки
+    selected_tv = None
+    if selected_tv_id:
+        selected_tv = db.query(TV).filter(TV.id == selected_tv_id).first()
+    
     return templates.TemplateResponse("advertiser_stats.html", {
         "request": request, "user": user, "campaigns": campaigns, "all_campaigns": all_campaigns,
         "stats": stats, "period": period,
         "date_from": date_from_val, "date_to": date_to_val, "selected_tv_id": selected_tv_id,
+        "selected_tv": selected_tv,
         **get_role_context(request, user)
     })
 
 
 @router.get("/advertiser/subscriptions", response_class=HTMLResponse)
-async def advertiser_subscriptions(request: Request, error: str = None, success: str = None, user: User = Depends(require_role_for_page(Role.ADVERTISER)), db: Session = Depends(get_db)):
+async def advertiser_subscriptions(request: Request, error: str = None, success: str = None, tv_id: Optional[str] = Query(default=None), user: User = Depends(require_role_for_page(Role.ADVERTISER)), db: Session = Depends(get_db)):
     """Advertiser subscriptions page — только статистика по кампаниям."""
-    subscriptions = db.query(Subscription).options(joinedload(Subscription.tv)).filter(Subscription.advertiser_id == user.id).order_by(Subscription.end_date.desc()).all()
+    # Load all subscriptions для фильтра dropdown
+    all_subscriptions = db.query(Subscription).options(joinedload(Subscription.tv)).filter(Subscription.advertiser_id == user.id).all()
+    unique_tvs = {}
+    for s in all_subscriptions:
+        if s.tv_id and s.tv_id not in unique_tvs:
+            unique_tvs[s.tv_id] = s.tv
+    
+    # Filter by TV if specified
+    selected_tv_id = None
+    tv_id_filter = None
+    if tv_id and tv_id.strip():
+        try:
+            tv_id_int = int(tv_id)
+            selected_tv_id = tv_id_int
+            tv_id_filter = tv_id_int
+        except (ValueError, TypeError):
+            pass
+    
+    # Загружаем subscriptions с фильтром
+    subscriptions_query = db.query(Subscription).options(joinedload(Subscription.tv)).filter(Subscription.advertiser_id == user.id)
+    if tv_id_filter:
+        subscriptions_query = subscriptions_query.filter(Subscription.tv_id == tv_id_filter)
+    subscriptions = subscriptions_query.order_by(Subscription.end_date.desc()).all()
+    
+    # Загружаем данные о выбранном ТВ для карточки
+    selected_tv = None
+    if selected_tv_id:
+        selected_tv = db.query(TV).filter(TV.id == selected_tv_id).first()
     
     today = date.today()
     campaign_rows = []
@@ -1053,11 +1086,23 @@ async def advertiser_subscriptions(request: Request, error: str = None, success:
     if success == "created":
         success_message = "✓ Подписка успешно оформлена! Размещение активно."
     
+    # Для фильтра dropdown используем все уникальные ТВ
+    class TVOption:
+        def __init__(self, tv_id, tv):
+            self.tv_id = tv_id
+            self.tv = tv
+    
+    all_campaigns = [TVOption(tv_id, tv) for tv_id, tv in unique_tvs.items()]
+    
     return templates.TemplateResponse("advertiser_subscriptions.html", {
         "request": request, "user": user,
         "campaign_rows": campaign_rows,
         "today": date.today().strftime("%Y-%m-%d"),
         "error": error_message, "success": success_message,
+        "all_campaigns": all_campaigns,
+        "selected_tv_id": selected_tv_id,
+        "selected_tv": selected_tv,
+        **get_role_context(request, user)
     })
 
 

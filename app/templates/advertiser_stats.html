@@ -180,8 +180,80 @@
             </select>
         </div>
         <button type="submit" class="btn btn-primary btn-sm">Применить</button>
+        {% if selected_tv_id %}
+        <a href="/advertiser/stats{% if period %}?period={{ period }}{% endif %}{% if date_from or date_to %}{% if period %}&{% else %}?{% endif %}date_from={{ date_from }}&date_to={{ date_to }}{% endif %}" class="btn btn-secondary btn-sm">Сбросить</a>
+        {% endif %}
     </form>
 </div>
+
+<!-- Карточка выбранного ТВ-экрана -->
+{% if selected_tv %}
+<div class="card" style="margin-bottom: 1.5rem; background: linear-gradient(135deg, var(--accent), #4f46e5); color: white;">
+    <div class="card-header" style="border-bottom: 1px solid rgba(255,255,255,0.2);">
+        <h3 class="card-title" style="color: white; display: flex; align-items: center; gap: 0.5rem;">
+            📺 {{ selected_tv.name }}
+        </h3>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; padding: 1rem 0;">
+        <div>
+            <div style="font-size: 0.85rem; opacity: 0.9; margin-bottom: 0.25rem;">📍 Место</div>
+            <div style="font-weight: 600; font-size: 1.1rem;">{{ selected_tv.venue_name or '—' }}</div>
+            <div style="font-size: 0.9rem; opacity: 0.8; margin-top: 0.25rem;">
+                {% if selected_tv.city %}{{ selected_tv.city }}{% endif %}{% if selected_tv.address %}, {{ selected_tv.address }}{% endif %}
+            </div>
+        </div>
+        <div>
+            <div style="font-size: 0.85rem; opacity: 0.9; margin-bottom: 0.25rem;">🏷️ Категория</div>
+            <div style="font-weight: 600; font-size: 1.1rem;">
+                {% if selected_tv.category %}
+                    {% set cat_map = {'cafe': 'Кофейня', 'restaurant': 'Ресторан', 'bar': 'Бар', 'shopping': 'Торговый центр', 'business': 'Бизнес-центр', 'clinic': 'Клиника', 'gym': 'Фитнес-клуб', 'hotel': 'Отель', 'beauty': 'Салон красоты', 'auto': 'Автосервис', 'coworking': 'Коворкинг', 'other': 'Другое'} %}
+                    {{ cat_map.get(selected_tv.category, selected_tv.category) }}
+                {% else %}
+                    —
+                {% endif %}
+            </div>
+        </div>
+        <div>
+            <div style="font-size: 0.85rem; opacity: 0.9; margin-bottom: 0.25rem;">👥 Целевая аудитория</div>
+            <div style="font-weight: 600; font-size: 1.1rem;">
+                {% if selected_tv.target_audience %}
+                    {% set aud_map = {'business': 'Бизнес-аудитория', 'youth': 'Молодёжь 18-25', 'family': 'Семейная', 'premium': 'Премиум', 'mass': 'Массовая'} %}
+                    {{ aud_map.get(selected_tv.target_audience, selected_tv.target_audience) }}
+                {% else %}
+                    —
+                {% endif %}
+            </div>
+        </div>
+        <div>
+            <div style="font-size: 0.85rem; opacity: 0.9; margin-bottom: 0.25rem;">👥 Клиентов в день</div>
+            <div style="font-weight: 600; font-size: 1.1rem;">{{ selected_tv.clients_per_day or '—' }}</div>
+        </div>
+        {% if selected_tv.working_hours %}
+        <div>
+            <div style="font-size: 0.85rem; opacity: 0.9; margin-bottom: 0.25rem;">🕐 Часы работы</div>
+            <div style="font-weight: 600; font-size: 1.1rem;">{{ selected_tv.working_hours }}</div>
+        </div>
+        {% endif %}
+        {% if selected_tv.avg_check %}
+        <div>
+            <div style="font-size: 0.85rem; opacity: 0.9; margin-bottom: 0.25rem;">💰 Средний чек</div>
+            <div style="font-weight: 600; font-size: 1.1rem;">{{ "%.0f"|format(selected_tv.avg_check) }} ₽</div>
+        </div>
+        {% endif %}
+    </div>
+    {% if selected_tv.description %}
+    <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.2);">
+        <div style="font-size: 0.85rem; opacity: 0.9; margin-bottom: 0.5rem;">📝 Описание</div>
+        <div style="font-size: 0.95rem; line-height: 1.6; opacity: 0.95;">{{ selected_tv.description }}</div>
+    </div>
+    {% endif %}
+    {% if selected_tv.photo_url %}
+    <div style="margin-top: 1rem;">
+        <img src="{{ selected_tv.photo_url }}" alt="{{ selected_tv.name }}" style="width: 100%; max-width: 400px; border-radius: 8px; border: 2px solid rgba(255,255,255,0.3);">
+    </div>
+    {% endif %}
+</div>
+{% endif %}
 
 <!-- Общая статистика -->
 <div class="stats-grid">
