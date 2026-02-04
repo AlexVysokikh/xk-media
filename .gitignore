@@ -1,31 +1,20 @@
-<<<<<<< HEAD
 # Python
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
+
+# Build/packaging
 build/
-develop-eggs/
 dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
 *.egg-info/
-.installed.cfg
-*.egg
 
 # Virtual environments
 venv/
 ENV/
 env/
-.venv
+.venv/
 
 # IDEs
 .vscode/
@@ -34,10 +23,10 @@ env/
 *.swo
 *~
 
-# Environment
+# Environment files (keep secrets out of git)
 .env
 .env.local
-.env.*.local
+.env.*
 
 # Database
 *.db
@@ -53,7 +42,7 @@ logs/
 .DS_Store
 Thumbs.db
 
-# Static files uploads
+# Static uploads
 app/static/uploads/*
 !app/static/uploads/.gitkeep
 
@@ -61,6 +50,7 @@ app/static/uploads/*
 .pytest_cache/
 .coverage
 htmlcov/
+coverage/
 
 # Temporary files
 *.tmp
@@ -70,16 +60,8 @@ htmlcov/
 # Alembic
 alembic/versions/*.pyc
 
+# Node
+node_modules/
+
 # Docker
 .dockerignore
-=======
-node_modules/
-.env
-.DS_Store
-*.log
-dist/
-build/
-coverage/
-.vscode/
-.idea/
->>>>>>> 23e82bc183e740fb23fe5f82f5c702202c0f7b7e

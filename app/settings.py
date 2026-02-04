@@ -1,5 +1,4 @@
 from pydantic_settings import BaseSettings
-from pydantic import field_validator
 from functools import lru_cache
 
 
@@ -24,16 +23,23 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     
     # ─────────────────────────────────────────────────────────────
-    # CORS (comma-separated string in .env)
+    # CORS
     # ─────────────────────────────────────────────────────────────
-    CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:8000"]
-    
-    @field_validator("CORS_ORIGINS", mode="before")
-    @classmethod
-    def parse_cors_origins(cls, v):
+    # В pydantic-settings v2 любые "complex" типы (list/dict) из env/.env
+    # по умолчанию парсятся как JSON. Поэтому для удобства держим строку
+    # вида "a,b,c" и уже в коде конвертим в list[str].
+    CORS_ORIGINS: str = "http://localhost:3000,http://localhost:8000"
+
+    @property
+    def cors_origins_list(self) -> list[str]:
+        v = self.CORS_ORIGINS
         if isinstance(v, str):
             return [origin.strip() for origin in v.split(",") if origin.strip()]
-        return v
+        # на всякий случай
+        try:
+            return list(v)  # type: ignore[arg-type]
+        except Exception:
+            return []
     
     # ─────────────────────────────────────────────────────────────
     # YooKassa (замена PayKeeper)
@@ -93,7 +99,23 @@ class Settings(BaseSettings):
     # Telegram для уведомлений
     # ─────────────────────────────────────────────────────────────
     TELEGRAM_BOT_TOKEN: str = ""
+
+    # Поддержка нескольких получателей.
+    # Можно задать один chat id через TELEGRAM_CHAT_ID (старое имя),
+    # или несколько через TELEGRAM_CHAT_IDS (через запятую).
     TELEGRAM_CHAT_ID: str = ""
+    TELEGRAM_CHAT_IDS: str = ""
+
+    # Необязательный allow-list по username (через запятую, без @),
+    # используется в скрипте настройки.
+    TELEGRAM_ALLOWED_USERNAMES: str = ""
+
+    @property
+    def telegram_chat_ids_list(self) -> list[str]:
+        raw = (self.TELEGRAM_CHAT_IDS or self.TELEGRAM_CHAT_ID or "").strip()
+        if not raw:
+            return []
+        return [s.strip() for s in raw.split(",") if s.strip()]
     
     class Config:
         env_file = ".env"

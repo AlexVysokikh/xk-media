@@ -104,22 +104,24 @@ class NotificationService:
                 msg.attach(MIMEText(body_text, 'plain', 'utf-8'))
             msg.attach(MIMEText(body_html, 'html', 'utf-8'))
 
+            timeout = int(os.getenv("SMTP_TIMEOUT", "10"))
+
             if smtp_port == 465:
                 # #region agent log
                 try:
                     with open(DEBUG_LOG_PATH, "a", encoding="utf-8") as f:
-                        f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "B", "location": "notification_service.py:62", "message": "SMTP_SSL connect attempt", "data": {"host": smtp_host, "port": smtp_port}, "timestamp": int(datetime.now().timestamp() * 1000)}) + "\n")
+                        f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "B", "location": "notification_service.py:62", "message": "SMTP_SSL connect attempt", "data": {"host": smtp_host, "port": smtp_port, "timeout": timeout}, "timestamp": int(datetime.now().timestamp() * 1000)}) + "\n")
                 except: pass
                 # #endregion
-                server = smtplib.SMTP_SSL(smtp_host, smtp_port)
+                server = smtplib.SMTP_SSL(smtp_host, smtp_port, timeout=timeout)
             else:
                 # #region agent log
                 try:
                     with open(DEBUG_LOG_PATH, "a", encoding="utf-8") as f:
-                        f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "B", "location": "notification_service.py:66", "message": "SMTP connect attempt", "data": {"host": smtp_host, "port": smtp_port, "use_tls": settings.SMTP_USE_TLS}, "timestamp": int(datetime.now().timestamp() * 1000)}) + "\n")
+                        f.write(json.dumps({"sessionId": "debug-session", "runId": "run1", "hypothesisId": "B", "location": "notification_service.py:66", "message": "SMTP connect attempt", "data": {"host": smtp_host, "port": smtp_port, "use_tls": settings.SMTP_USE_TLS, "timeout": timeout}, "timestamp": int(datetime.now().timestamp() * 1000)}) + "\n")
                 except: pass
                 # #endregion
-                server = smtplib.SMTP(smtp_host, smtp_port)
+                server = smtplib.SMTP(smtp_host, smtp_port, timeout=timeout)
                 if settings.SMTP_USE_TLS:
                     server.starttls()
             # #region agent log
@@ -174,24 +176,28 @@ class NotificationService:
         Returns:
             True если отправлено успешно, False иначе
         """
-        if not settings.TELEGRAM_BOT_TOKEN or not settings.TELEGRAM_CHAT_ID:
+        chat_ids = settings.telegram_chat_ids_list
+
+        if not settings.TELEGRAM_BOT_TOKEN or not chat_ids:
             print("Telegram not configured, skipping Telegram notification")
             return False
-        
+
+        ok_any = False
+        url = f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}/sendMessage"
+
         try:
-            url = f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}/sendMessage"
-            data = {
-                "chat_id": settings.TELEGRAM_CHAT_ID,
-                "text": message,
-                "parse_mode": parse_mode
-            }
-            
             async with httpx.AsyncClient(timeout=10.0) as client:
-                response = await client.post(url, json=data)
-                response.raise_for_status()
-            
-            print(f"Telegram message sent to chat {settings.TELEGRAM_CHAT_ID}")
-            return True
+                for chat_id in chat_ids:
+                    data = {
+                        "chat_id": chat_id,
+                        "text": message,
+                        "parse_mode": parse_mode,
+                    }
+                    resp = await client.post(url, json=data)
+                    resp.raise_for_status()
+                    ok_any = True
+                    print(f"Telegram message sent to chat {chat_id}")
+            return ok_any
         except Exception as e:
             print(f"Error sending Telegram message: {e}")
             import traceback

@@ -2,7 +2,9 @@
 # -*- coding: utf-8 -*-
 """
 Скрипт для настройки Telegram уведомлений.
-Помогает получить chat_id для пользователя @Aleksandr_Vys.
+
+Показывает chat_id пользователей, которые написали боту.
+Можно использовать allow-list по TELEGRAM_ALLOWED_USERNAMES (через запятую, без @).
 """
 
 import sys
@@ -17,44 +19,61 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from app.settings import settings
 
 
-async def get_chat_id(bot_token: str):
-    """Получить chat_id из последних обновлений бота."""
+async def get_chat_ids(bot_token: str, allowed_usernames: set[str] | None = None):
+    """Получить список chat_id из обновлений бота."""
     try:
         url = f"https://api.telegram.org/bot{bot_token}/getUpdates"
         async with httpx.AsyncClient(timeout=10.0) as client:
             response = await client.get(url)
             response.raise_for_status()
             data = response.json()
-            
-            if data.get("ok") and data.get("result"):
-                updates = data["result"]
-                if updates:
-                    # Берем последнее обновление
-                    last_update = updates[-1]
-                    if "message" in last_update:
-                        chat = last_update["message"]["chat"]
-                        chat_id = chat.get("id")
-                        username = chat.get("username", "N/A")
-                        first_name = chat.get("first_name", "N/A")
-                        
-                        print(f"\n✅ Найден chat_id:")
-                        print(f"   Chat ID: {chat_id}")
-                        print(f"   Username: @{username}")
-                        print(f"   Имя: {first_name}")
-                        print(f"\nДобавьте в .env файл:")
-                        print(f"TELEGRAM_CHAT_ID={chat_id}")
-                        return chat_id
-                    else:
-                        print("❌ В обновлениях нет сообщений. Напишите боту сообщение и попробуйте снова.")
-                else:
-                    print("❌ Нет обновлений. Напишите боту сообщение и попробуйте снова.")
-            else:
-                print(f"❌ Ошибка API: {data.get('description', 'Unknown error')}")
+
+        if not data.get("ok"):
+            print(f"❌ Ошибка API: {data.get('description', 'Unknown error')}")
+            return []
+
+        updates = data.get("result") or []
+        if not updates:
+            print("❌ Нет обновлений. Напишите боту /start и любое сообщение (с нужных аккаунтов) и запустите скрипт снова.")
+            return []
+
+        chats: dict[int, dict] = {}
+        for upd in updates:
+            msg = upd.get("message") or upd.get("edited_message")
+            if not msg:
+                continue
+            chat = msg.get("chat") or {}
+            chat_id = chat.get("id")
+            if chat_id is None:
+                continue
+            username = (chat.get("username") or "").lstrip("@").strip().lower()
+            if allowed_usernames and username and username not in allowed_usernames:
+                continue
+            chats[int(chat_id)] = {
+                "chat_id": int(chat_id),
+                "username": username,
+                "first_name": chat.get("first_name") or "",
+                "type": chat.get("type") or "",
+            }
+
+        if not chats:
+            print("❌ Не нашёл подходящих чатов в updates. Убедитесь что нужные аккаунты написали боту /start.")
+            return []
+
+        print("\n✅ Найденные чаты:")
+        for c in chats.values():
+            u = f"@{c['username']}" if c.get("username") else "(no username)"
+            print(f"  - chat_id={c['chat_id']}  {u}  {c.get('first_name','')}")
+
+        chat_ids = [str(cid) for cid in chats.keys()]
+        print("\nДобавьте в .env (.env.local) файл:")
+        print(f"TELEGRAM_CHAT_IDS={','.join(chat_ids)}")
+        return chat_ids
     except Exception as e:
         print(f"❌ Ошибка при получении chat_id: {e}")
         import traceback
         traceback.print_exc()
-    return None
+        return []
 
 
 async def test_telegram_send(bot_token: str, chat_id: str):
@@ -89,51 +108,38 @@ async def main():
     print("=" * 60)
     print("Настройка Telegram уведомлений для XK Media")
     print("=" * 60)
-    
-    # Проверяем текущие настройки
+
     bot_token = settings.TELEGRAM_BOT_TOKEN
-    chat_id = settings.TELEGRAM_CHAT_ID
-    
+
+    allow_raw = (getattr(settings, "TELEGRAM_ALLOWED_USERNAMES", "") or "").strip().lower()
+    allowed = {u.strip().lstrip("@").lower() for u in allow_raw.split(",") if u.strip()} if allow_raw else None
+
     print(f"\nТекущие настройки:")
     print(f"  TELEGRAM_BOT_TOKEN: {'✅ Установлен' if bot_token else '❌ Не установлен'}")
-    print(f"  TELEGRAM_CHAT_ID: {'✅ Установлен' if chat_id else '❌ Не установлен'}")
-    
+    if allowed:
+        print(f"  TELEGRAM_ALLOWED_USERNAMES: {', '.join(sorted(allowed))}")
+
     if not bot_token:
-        print("\n" + "=" * 60)
-        print("📝 Инструкция по созданию Telegram бота:")
-        print("=" * 60)
-        print("1. Откройте Telegram и найдите @BotFather")
-        print("2. Отправьте команду /newbot")
-        print("3. Следуйте инструкциям для создания бота")
-        print("4. Скопируйте токен бота (выглядит как: 123456789:ABCdefGHIjklMNOpqrsTUVwxyz)")
-        print("5. Добавьте токен в .env файл:")
-        print("   TELEGRAM_BOT_TOKEN=ваш_токен_бота")
-        print("\nПосле создания бота, напишите ему любое сообщение от вашего аккаунта @Aleksandr_Vys")
+        print("\nДобавьте токен в .env/.env.local:")
+        print("TELEGRAM_BOT_TOKEN=ваш_токен_бота")
+        print("\nПосле этого напишите боту /start с нужных аккаунтов.")
         return
-    
+
     print("\n" + "=" * 60)
-    print("Получение chat_id...")
+    print("Получение chat_id из getUpdates...")
     print("=" * 60)
-    
-    if not chat_id:
-        print("\n⚠️  Chat ID не установлен. Пытаемся получить автоматически...")
-        print("Убедитесь, что вы написали боту сообщение от аккаунта @Aleksandr_Vys")
-        
-        new_chat_id = await get_chat_id(bot_token)
-        if new_chat_id:
-            print(f"\n✅ Добавьте в .env файл:")
-            print(f"TELEGRAM_CHAT_ID={new_chat_id}")
-    else:
-        print(f"\n✅ Chat ID уже установлен: {chat_id}")
-    
+
+    chat_ids = await get_chat_ids(bot_token, allowed_usernames=allowed)
+
     # Тестовая отправка
-    if bot_token and chat_id:
+    if chat_ids:
         print("\n" + "=" * 60)
         print("Тестовая отправка сообщения...")
         print("=" * 60)
-        
-        await test_telegram_send(bot_token, chat_id)
-    
+
+        for cid in chat_ids:
+            await test_telegram_send(bot_token, cid)
+
     print("\n" + "=" * 60)
     print("✅ Настройка завершена!")
     print("=" * 60)
